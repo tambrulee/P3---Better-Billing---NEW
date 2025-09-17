@@ -14,9 +14,30 @@
 
     <a href="record.html" class="btn btn-primary">Record Hours</a>
 
-    <a href="create_invoice.html" class="btn btn-primary">Create Hours</a>
+    <a href="create_invoice.html" class="btn btn-primary">Create Invoice</a>
 
     <a href="view_invoice.html" class="btn btn-primary">View Invoice</a>
+
+    <form action="post">
+        <div>
+            <label for="item_description">Item Description:</label>
+            <input type="text" id="item_description" name="item_description" required>
+        </div>
+        <div>
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" required>
+        </div>
+        <div>
+            <label for="price">Price:</label>
+            <input type="number" step="0.01" id="price" name="price" required>
+        </div>
+        <button type="submit">Submit</button>
+
+    </form>
+
+    <div>
+        <button>Add Item</button>
+    </div>
 
 
     <!-- Bootstrap JS -->
