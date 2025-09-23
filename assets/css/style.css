@@ -1,0 +1,8 @@
+*, body{
+    background-color: aqua;
+}
+
+.btn-primary{
+    background-color: orange;
+    border: olivedrab;
+}
