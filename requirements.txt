@@ -7,3 +7,6 @@ psycopg2-binary==2.9.10
 python-dotenv==1.1.1
 sqlparse==0.5.3
 whitenoise==6.11.0
+
+heroku-postgres essential-0 ~$0.007/hour $5/month  created 
+  └─ as DATABASE    
