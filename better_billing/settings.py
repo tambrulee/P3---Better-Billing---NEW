@@ -90,14 +90,33 @@ WSGI_APPLICATION = 'better_billing.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": dj_database_url.config(
-        env="NEON_DATABASE_URL",   
-        default=None,              
-        conn_max_age=600,
-        ssl_require=True,
-    )
-}
+import os
+import dj_database_url
+
+USE_SSL = True  # Neon/Heroku Postgres need SSL
+
+neon = os.getenv("NEON_DATABASE_URL")
+heroku_db = os.getenv("DATABASE_URL")
+
+if neon or heroku_db:
+    DATABASES = {
+        "default": dj_database_url.config(
+            env="NEON_DATABASE_URL",          # prefer NEON if present
+            default=heroku_db,                # else use Heroku's DATABASE_URL
+            conn_max_age=600,
+            ssl_require=USE_SSL,
+        )
+    }
+else:
+    # Local dev fallback: SQLite
+    from pathlib import Path
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 
