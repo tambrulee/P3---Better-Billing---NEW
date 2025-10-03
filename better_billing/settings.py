@@ -90,9 +90,6 @@ WSGI_APPLICATION = 'better_billing.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-import os
-import dj_database_url
-
 USE_SSL = True  # Neon/Heroku Postgres need SSL
 
 neon = os.getenv("NEON_DATABASE_URL")
