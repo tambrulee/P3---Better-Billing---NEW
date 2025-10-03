@@ -190,8 +190,14 @@ Download link via Apple Store
 https://developer.apple.com/download/all/?q=xcode
 
 
-#Heroku 
+# Heroku 
 
 Logged into Heroku - selected build new app
 Under 'Deploy' I connected my repo
+
+# Bugs
+
+Unable to connect to Heroku CLI
+
+Resolution: Download Command Line Tools (CLT) - also had to update MacOS to allow CLT to download
 

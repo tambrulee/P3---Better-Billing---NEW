@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-wtz_aawo1+u*^%a26pb0^sh-u2sa#t9v4e5zrf+$3fa)3#nv58
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["betterbilling-6aa73670769a.herokuapp.com", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -91,11 +91,13 @@ WSGI_APPLICATION = 'better_billing.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,        # Persistent connections
+        ssl_require=not os.getenv("DEBUG", "False").lower() in ("true", "1"),
+    )
 }
+
 
 
 # Password validation
