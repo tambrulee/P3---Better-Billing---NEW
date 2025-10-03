@@ -201,3 +201,10 @@ Unable to connect to Heroku CLI
 
 Resolution: Download Command Line Tools (CLT) - also had to update MacOS to allow CLT to download
 
+# Testing 
+
+heroku open -a betterbilling 
+Check app is active
+heroku apps:info -a betterbilling
+Check info about app
+
