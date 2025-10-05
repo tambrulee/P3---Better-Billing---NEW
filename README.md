@@ -208,7 +208,3 @@ Check app is active
 heroku apps:info -a betterbilling
 Check info about app
 
-# Superuser
-betteradmin
-thamiltontestrote@gmail.com
-Sillysausage

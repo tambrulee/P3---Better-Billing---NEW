@@ -1,99 +1,65 @@
-from django.contrib import admin
-from import_export import resources, fields
-from import_export.widgets import ForeignKeyWidget, DateTimeWidget
-from import_export.admin import ImportExportModelAdmin
-from .models import Client, Personnel, Matter, TimeEntry
+from django.db import models
 
-# --- Resources ---
-class ClientResource(resources.ModelResource):
-    class Meta:
-        model = Client
-        fields = ("id", "client_number", "name", "address", "phone", "contact")
-        import_id_fields = ("client_number",)  # allow updates by client_number
 
-class PersonnelResource(resources.ModelResource):
-    class Meta:
-        model = Personnel
-        fields = ("id", "initials", "name", "rate", "role")
-        import_id_fields = ("initials",)  # allow updates by initials
 
-class MatterResource(resources.ModelResource):
-    client = fields.Field(
-        column_name="client_number",
-        attribute="client",
-        widget=ForeignKeyWidget(Client, "client_number"),
-    )
-    lead_fee_earner = fields.Field(
-        column_name="lead_fee_earner_initials",
-        attribute="lead_fee_earner",
-        widget=ForeignKeyWidget(Personnel, "initials"),
-    )
-    opened_at = fields.Field(
-        column_name="opened_at",
-        attribute="opened_at",
-        widget=DateTimeWidget(format="%Y-%m-%d %H:%M:%S"),
-    )
-    closed_at = fields.Field(
-        column_name="closed_at",
-        attribute="closed_at",
-        widget=DateTimeWidget(format="%Y-%m-%d %H:%M:%S"),
-    )
+# --- Core lookups ---
+class Client(models.Model):
+    client_number = models.IntegerField(unique=True)
+    name          = models.CharField(max_length=255)
+    address       = models.TextField(blank=True)
+    phone         = models.CharField(max_length=50, blank=True)
+    contact       = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        model = Matter
-        fields = (
-            "id", "matter_number", "description",
-            "client", "lead_fee_earner", "opened_at", "closed_at"
-        )
-        import_id_fields = ("matter_number",)
+        ordering = ["name"]
 
-class TimeEntryResource(resources.ModelResource):
-    matter = fields.Field(
-        column_name="matter_number",
-        attribute="matter",
-        widget=ForeignKeyWidget(Matter, "matter_number"),
-    )
-    fee_earner = fields.Field(
-        column_name="fee_earner_initials",
-        attribute="fee_earner",
-        widget=ForeignKeyWidget(Personnel, "initials"),
-    )
-    created_at = fields.Field(
-        column_name="created_at",
-        attribute="created_at",
-        widget=DateTimeWidget(format="%Y-%m-%d %H:%M:%S"),
-    )
+    def __str__(self):
+        return f"{self.client_number} - {self.name}"
+
+
+class Personnel(models.Model):
+    initials = models.CharField(max_length=10, unique=True)
+    name     = models.CharField(max_length=255)
+    rate     = models.DecimalField(max_digits=10, decimal_places=2)  # money
+    role     = models.CharField(max_length=100, blank=True)
 
     class Meta:
-        model = TimeEntry
-        fields = (
-            "id", "matter", "fee_earner", "personnel_rate",
-            "hours_worked", "total_amount", "activity_code",
-            "narrative", "created_at"
-        )
-        # If you want to allow updating existing rows, add import_id_fields with a natural key.
+        ordering = ["initials"]
 
-# --- Admin registrations ---
-@admin.register(Client)
-class ClientAdmin(ImportExportModelAdmin):
-    resource_class = ClientResource
-    list_display = ("client_number", "name", "phone", "contact")
-    search_fields = ("client_number", "name", "phone", "contact")
+    def __str__(self):
+        return f"{self.initials} - {self.name}"
 
-@admin.register(Personnel)
-class PersonnelAdmin(ImportExportModelAdmin):
-    resource_class = PersonnelResource
-    list_display = ("initials", "name", "rate", "role")
-    search_fields = ("initials", "name", "role")
 
-@admin.register(Matter)
-class MatterAdmin(ImportExportModelAdmin):
-    resource_class = MatterResource
-    list_display = ("matter_number", "client", "lead_fee_earner", "opened_at", "closed_at")
-    search_fields = ("matter_number", "description", "client__name", "lead_fee_earner__initials")
+class Matter(models.Model):
+    matter_number   = models.CharField(max_length=50, unique=True)
+    description     = models.CharField(max_length=255, blank=True)
+    client          = models.ForeignKey(Client, on_delete=models.PROTECT, related_name="matters")
+    lead_fee_earner = models.ForeignKey(Personnel, on_delete=models.PROTECT, related_name="lead_matters")
+    opened_at       = models.DateTimeField()
+    closed_at       = models.DateTimeField(null=True, blank=True)
 
-@admin.register(TimeEntry)
-class TimeEntryAdmin(ImportExportModelAdmin):
-    resource_class = TimeEntryResource
-    list_display = ("matter", "fee_earner", "hours_worked", "total_amount", "created_at")
-    search_fields = ("matter__matter_number", "fee_earner__initials", "activity_code", "narrative")
+    class Meta:
+        ordering = ["matter_number"]
+
+    def __str__(self):
+        return f"{self.matter_number} - {self.description or self.client.name}"
+
+
+# --- Transactions / timecards ---
+class TimeEntry(models.Model):
+    matter         = models.ForeignKey(Matter, on_delete=models.PROTECT, related_name="time_entries")
+    fee_earner     = models.ForeignKey(Personnel, on_delete=models.PROTECT, related_name="time_entries")
+    # store the rate used when the entry was recorded, so historical bills don't change
+    personnel_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    hours_worked   = models.DecimalField(max_digits=8, decimal_places=2)  # e.g. 0.25 increments
+    total_amount   = models.DecimalField(max_digits=12, decimal_places=2)
+    activity_code  = models.CharField(max_length=50, blank=True)
+    narrative      = models.TextField(blank=True)
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h"
+
