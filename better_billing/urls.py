@@ -20,7 +20,7 @@ from better_bill_project import views as index_views
 from better_bill_project.views import create_invoice 
 
 urlpatterns = [
-    path('', index_views.index, name='index'),
     path('admin/', admin.site.urls),
+    path('', index_views.index, name='index'),
     path("", include("better_bill_project.urls")),
 ]
