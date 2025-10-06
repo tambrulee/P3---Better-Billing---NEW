@@ -1,22 +1,45 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 
 
 
 
 # --- Client lookup ---
 class Client(models.Model):
-    client_number =  models.CharField(max_length=6, unique=True)
+    client_number = models.CharField(max_length=6, unique=True)
     name          = models.CharField(max_length=100)
-    address       = models.CharField(max_length=100)
-    phone         = models.CharField(max_length=50)
-    contact       = models.CharField(max_length=100)
+    
+    # Address fields (normalized)
+    address_line_1 = models.CharField("Address Line 1", max_length=100, blank=True)
+    address_line_2 = models.CharField("Address Line 2", max_length=100, blank=True)
+    street_name    = models.CharField("Street Name", max_length=100, blank=True)
+    city           = models.CharField("City", max_length=100, blank=True)
+    county         = models.CharField("County", max_length=100, blank=True)
+    postcode       = models.CharField("Postcode", max_length=20, blank=True)
+
+    phone          = models.CharField(max_length=50, blank=True)
+    contact        = models.CharField(max_length=100, blank=True)
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return f"{self.client_number} - {self.name}"
+
+    @property
+    def full_address(self):
+        """Combine address components into a single display string."""
+        parts = [
+            self.address_line_1,
+            self.address_line_2,
+            self.street_name,
+            self.city,
+            self.county,
+            self.postcode,
+        ]
+        return ", ".join(p for p in parts if p)
+
 
 
 # --- Roles lookup ---
@@ -77,19 +100,25 @@ class ActivityCode(models.Model):
 # --- Time Entry ---
 
 class TimeEntry(models.Model):
-    matter         = models.ForeignKey(Matter, on_delete=models.PROTECT, related_name="time_entries")
-    fee_earner     = models.ForeignKey(Personnel, on_delete=models.PROTECT, related_name="time_entries")
-    personnel_rate = models.DecimalField(max_digits=10, decimal_places=2)
-    hours_worked   = models.DecimalField(max_digits=8, decimal_places=2)
-    total_amount   = models.DecimalField(max_digits=12, decimal_places=2)
-    activity_code  = models.ForeignKey(ActivityCode, on_delete=models.PROTECT,
-                                       related_name="time_entries", null=True, blank=True)
-    narrative      = models.TextField(blank=True)
-    created_at     = models.DateTimeField(auto_now_add=True)
+    matter = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="time_entries")
+    fee_earner = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="time_entries")
+    activity_code = models.ForeignKey(
+        "ActivityCode",
+        on_delete=models.PROTECT,
+        related_name="time_entries",
+        null=True,
+        blank=True
+    )
+    hours_worked = models.DecimalField(
+        max_digits=5,  # Enough to store e.g. 999.9 hours
+        decimal_places=1,  # 0.1 increments (6-minute units)
+        help_text="Time worked, in 0.1-hour increments (6 minutes)"
+    )
+    narrative = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h"
-

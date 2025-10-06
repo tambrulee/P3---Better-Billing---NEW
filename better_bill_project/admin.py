@@ -44,9 +44,9 @@ class MatterResource(resources.ModelResource):
         widget=ForeignKeyWidget(Client, "client_number"),
     )
     lead_fee_earner = fields.Field(
-        column_name="lead_fee_earner_initials",
+        column_name="lead_fee_earner_name",
         attribute="lead_fee_earner",
-        widget=ForeignKeyWidget(Personnel, "initials"),
+        widget=ForeignKeyWidget(Personnel, "name"),
     )
     opened_at = fields.Field(
         column_name="opened_at",
@@ -106,9 +106,15 @@ class RoleAdmin(ImportExportModelAdmin):
 
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
-    resource_class = ClientResource
-    list_display = ("client_number", "name", "phone", "contact")
-    search_fields = ("client_number", "name", "phone", "contact")
+    list_display = ("client_number", "name", "city", "county", "postcode", "phone", "contact")
+    search_fields = ("client_number", "name", "city", "county", "postcode", "phone", "contact")
+    fields = (
+        "client_number", "name",
+        ("address_line_1", "address_line_2"),
+        ("street_name", "city", "county", "postcode"),
+        "phone", "contact",
+    )
+
 
 
 @admin.register(Personnel)
@@ -129,16 +135,16 @@ class MatterAdmin(ImportExportModelAdmin):
     resource_class = MatterResource
     list_display = ("matter_number", "client", "lead_fee_earner", "opened_at", "closed_at")
     list_select_related = ("client", "lead_fee_earner")
-    search_fields = ("matter_number", "description", "client__name", "lead_fee_earner__initials")
+    search_fields = ("matter_number", "description", "client__name", "lead_fee_earner__name")
 
 @admin.register(ActivityCode)
-class ActivityCodeAdmin(admin.ModelAdmin):
+class ActivityCodeAdmin(ImportExportModelAdmin):
     list_display = ("activity_code", "activity_description")
     search_fields = ("activity_code", "activity_description")
 
 @admin.register(TimeEntry)
 class TimeEntryAdmin(ImportExportModelAdmin):
     resource_class = TimeEntryResource
-    list_display = ("matter", "fee_earner", "hours_worked", "personnel_rate", "total_amount", "created_at")
+    list_display = ("matter", "fee_earner", "hours_worked", "created_at")
     list_select_related = ("matter", "fee_earner")
     search_fields = ("matter__matter_number", "fee_earner__initials", "activity_code", "narrative")
