@@ -1,24 +1,41 @@
-# Register your models here.
-
 from django.contrib import admin
 from import_export import resources, fields
-from import_export.widgets import ForeignKeyWidget, DateTimeWidget 
+from import_export.widgets import ForeignKeyWidget, DateTimeWidget
 from import_export.admin import ImportExportModelAdmin
-from .models import Client, Personnel, Matter, TimeEntry
+
+# IMPORTANT: include Role here
+from .models import Client, Personnel, Role, Matter, TimeEntry, ActivityCode
 
 
 # --- Resources ---
+
+class RoleResource(resources.ModelResource):
+    class Meta:
+        model = Role
+        fields = ("id", "role", "rate")
+        import_id_fields = ("role",)  # update by role name
+
+
 class ClientResource(resources.ModelResource):
     class Meta:
         model = Client
         fields = ("id", "client_number", "name", "address", "phone", "contact")
-        import_id_fields = ("client_number",)  # allow updates by client_number
+        import_id_fields = ("client_number",)
+
 
 class PersonnelResource(resources.ModelResource):
+    # Map FK by Role.role (name) instead of ID for import/export
+    role = fields.Field(
+        column_name="role",
+        attribute="role",
+        widget=ForeignKeyWidget(Role, "role"),
+    )
+
     class Meta:
         model = Personnel
-        fields = ("id", "initials", "name", "rate", "role")
-        import_id_fields = ("initials",)  # allow updates by initials
+        fields = ("id", "initials", "name", "role")
+        import_id_fields = ("initials",)
+
 
 class MatterResource(resources.ModelResource):
     client = fields.Field(
@@ -50,6 +67,7 @@ class MatterResource(resources.ModelResource):
         )
         import_id_fields = ("matter_number",)
 
+
 class TimeEntryResource(resources.ModelResource):
     matter = fields.Field(
         column_name="matter_number",
@@ -74,29 +92,53 @@ class TimeEntryResource(resources.ModelResource):
             "hours_worked", "total_amount", "activity_code",
             "narrative", "created_at"
         )
-        # If you want to allow updating existing rows, add import_id_fields with a natural key.
+        # Add import_id_fields if you later define a natural key
+
 
 # --- Admin registrations ---
+
+@admin.register(Role)
+class RoleAdmin(ImportExportModelAdmin):
+    resource_class = RoleResource
+    list_display = ("role", "rate")
+    search_fields = ("role",)
+
+
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
     resource_class = ClientResource
     list_display = ("client_number", "name", "phone", "contact")
     search_fields = ("client_number", "name", "phone", "contact")
 
+
 @admin.register(Personnel)
 class PersonnelAdmin(ImportExportModelAdmin):
     resource_class = PersonnelResource
-    list_display = ("initials", "name", "rate", "role")
-    search_fields = ("initials", "name", "role")
+    list_display = ("initials", "name", "role", "rate_display")
+    list_select_related = ("role",)
+    search_fields = ("initials", "name", "role__role")  # note the double underscore
+
+    def rate_display(self, obj):
+        return obj.role.rate
+    rate_display.short_description = "Rate"
+    rate_display.admin_order_field = "role__rate"
+
 
 @admin.register(Matter)
 class MatterAdmin(ImportExportModelAdmin):
     resource_class = MatterResource
     list_display = ("matter_number", "client", "lead_fee_earner", "opened_at", "closed_at")
+    list_select_related = ("client", "lead_fee_earner")
     search_fields = ("matter_number", "description", "client__name", "lead_fee_earner__initials")
+
+@admin.register(ActivityCode)
+class ActivityCodeAdmin(admin.ModelAdmin):
+    list_display = ("activity_code", "activity_description")
+    search_fields = ("activity_code", "activity_description")
 
 @admin.register(TimeEntry)
 class TimeEntryAdmin(ImportExportModelAdmin):
     resource_class = TimeEntryResource
-    list_display = ("matter", "fee_earner", "hours_worked", "total_amount", "created_at")
+    list_display = ("matter", "fee_earner", "hours_worked", "personnel_rate", "total_amount", "created_at")
+    list_select_related = ("matter", "fee_earner")
     search_fields = ("matter__matter_number", "fee_earner__initials", "activity_code", "narrative")

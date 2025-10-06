@@ -190,8 +190,11 @@ Download link via Apple Store
 https://developer.apple.com/download/all/?q=xcode
 
 
-# Heroku 
+# Django & Heroku set up
 
+1. Installed latest version of Python 
+2. Used pip to install Django
+3. 
 Logged into Heroku - selected build new app
 Under 'Deploy' I connected my repo
 
@@ -208,3 +211,6 @@ Check app is active
 heroku apps:info -a betterbilling
 Check info about app
 
+
+python manage.py makemigrations
+python manage.py migrate
