@@ -17,13 +17,10 @@
     <h1>Better Billing</h1>
 
     <!-- Navigation -->
-
-    <a href="record.html" class="btn btn-primary">Record Hours</a>
-
+    <a href="{% url 'record-time' %}" class="btn btn-primary">Record Hours</a>
     <a href="{% url 'create-invoice' %}" class="btn btn-primary">Create Invoice</a>
-    
-    <a href="view_invoice.html" class="btn btn-primary">View Invoice</a>
-    </header>
+    <a href="{% url 'view-invoice' %}" class="btn btn-primary">View Invoice</a>
+  /header>
 
     <main></main>
     
