@@ -4,7 +4,7 @@ from import_export.widgets import ForeignKeyWidget, DateTimeWidget
 from import_export.admin import ImportExportModelAdmin
 
 # IMPORTANT: include Role here
-from .models import Client, Personnel, Role, Matter, TimeEntry, ActivityCode
+from .models import Client, Personnel, Role, Matter, TimeEntry, ActivityCode, WIP
 
 
 # --- Resources ---
@@ -148,3 +148,10 @@ class TimeEntryAdmin(ImportExportModelAdmin):
     list_display = ("matter", "fee_earner", "hours_worked", "created_at")
     list_select_related = ("matter", "fee_earner")
     search_fields = ("matter__matter_number", "fee_earner__initials", "activity_code", "narrative")
+
+@admin.register(WIP)
+class WIPAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "matter", "fee_earner", "hours_worked", "status")
+    list_filter  = ("status", "fee_earner", "matter", "created_at")
+    search_fields = ("matter__matter_number", "fee_earner__initials", "narrative")
+

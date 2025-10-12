@@ -2,9 +2,6 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 
-
-
-
 # --- Client lookup ---
 class Client(models.Model):
     client_number = models.CharField(max_length=6, unique=True)
@@ -122,3 +119,31 @@ class TimeEntry(models.Model):
 
     def __str__(self):
         return f"{self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h"
+    
+
+# --- WIP ---
+
+class WIP(models.Model):
+    STATUS_CHOICES = [
+        ("unbilled", "Unbilled"),
+        ("billed", "Billed"),
+        ("written_off", "Written off"),
+    ]
+
+    time_entry    = models.OneToOneField("TimeEntry", on_delete=models.CASCADE, related_name="wip")
+    matter        = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="wip_items")
+    fee_earner    = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="wip_items")
+    activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT, null=True, blank=True, related_name="wip_items")
+
+    hours_worked  = models.DecimalField(max_digits=5, decimal_places=1)  # mirrors TimeEntry
+    narrative     = models.TextField(blank=True)
+
+    status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="unbilled")
+    created_at    = models.DateTimeField(auto_now_add=True)
+    updated_at    = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"WIP for {self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h ({self.status})"
