@@ -43,9 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
-    'better_bill_project',
     'import_export',
-    
+    'better_bill_project.apps.BetterBillProjectConfig',
 ]
 
 MIDDLEWARE = [
