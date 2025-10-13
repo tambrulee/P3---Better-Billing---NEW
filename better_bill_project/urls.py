@@ -6,5 +6,6 @@ urlpatterns = [
     path("create_invoice.html", views.create_invoice, name="create-invoice"),
     path("record.html", views.record_time, name="record-time"),
     path("view_invoice.html", views.view_invoice, name="view-invoice"),
+    path("ajax/matter-options/", views.matter_options, name="ajax-matter-options"),
 
 ]

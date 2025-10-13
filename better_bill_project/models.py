@@ -97,29 +97,26 @@ class ActivityCode(models.Model):
 # --- Time Entry ---
 
 class TimeEntry(models.Model):
+    client = models.ForeignKey("Client", on_delete=models.PROTECT, related_name="time_entries")  # NEW
     matter = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="time_entries")
     fee_earner = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="time_entries")
-    activity_code = models.ForeignKey(
-        "ActivityCode",
-        on_delete=models.PROTECT,
-        related_name="time_entries",
-        null=True,
-        blank=True
-    )
-    hours_worked = models.DecimalField(
-        max_digits=5,  # Enough to store e.g. 999.9 hours
-        decimal_places=1,  # 0.1 increments (6-minute units)
-        help_text="Time worked, in 0.1-hour increments (6 minutes)"
-    )
+    activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT,
+                                      related_name="time_entries", null=True, blank=True)
+    hours_worked = models.DecimalField(max_digits=5, decimal_places=1,
+                                       help_text="Time worked, in 0.1-hour increments (6 minutes)")
     narrative = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["-created_at"]
 
+    def clean(self):
+        # Ensure the matter selected actually belongs to the chosen client
+        if self.matter_id and self.client_id and self.matter.client_id != self.client_id:
+            raise ValidationError({"matter": "Selected matter does not belong to the chosen client."})
+
     def __str__(self):
         return f"{self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h"
-    
 
 # --- WIP ---
 

@@ -18,15 +18,20 @@ def record_time(request):
         form = TimeEntryForm(request.POST)
         if form.is_valid():
             entry = form.save()
-            messages.success(request, f"Time entry saved for {entry.matter.matter_number}")
+            messages.success(request, f"Time entry saved for {entry.matter.matter_number}.")
             return redirect("record-time")
     else:
         form = TimeEntryForm()
 
-    recent_entries = TimeEntry.objects.select_related("matter", "fee_earner").order_by("-created_at")[:10]
+    recent_entries = TimeEntry.objects.select_related("client", "matter", "fee_earner").order_by("-created_at")[:10]
     return render(request, "better_bill_project/record.html", {"form": form, "recent_entries": recent_entries})
 
-def view_invoice(request):
-    return render(request, "better_bill_project/view_invoice.html")
+# --- AJAX: return <option> list for matters by client ---
+def matter_options(request):
+    client_id = request.GET.get("client")
+    qs = Matter.objects.none()
+    if client_id:
+        qs = Matter.objects.filter(client_id=client_id, closed_at__isnull=True).order_by("matter_number")
+    return render(request, "better_bill_project/partials/_matter_options.html", {"matters": qs})
 
 

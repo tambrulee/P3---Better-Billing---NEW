@@ -1,0 +1,4 @@
+<option value="">— Select matter —</option>
+{% for m in matters %}
+  <option value="{{ m.id }}">{{ m.matter_number }} — {{ m.description }}</option>
+{% endfor %}
