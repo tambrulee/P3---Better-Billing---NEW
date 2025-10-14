@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
@@ -97,7 +98,12 @@ class ActivityCode(models.Model):
 # --- Time Entry ---
 
 class TimeEntry(models.Model):
-    client = models.ForeignKey("Client", on_delete=models.PROTECT, related_name="time_entries")  # NEW
+    client = models.ForeignKey(
+    "Client",
+    on_delete=models.PROTECT,
+    related_name="time_entries",
+    null=True, blank=True,   # ← TEMP so the column can be added
+)
     matter = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="time_entries")
     fee_earner = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="time_entries")
     activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT,
@@ -144,3 +150,65 @@ class WIP(models.Model):
 
     def __str__(self):
         return f"WIP for {self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h ({self.status})"
+
+class Invoice(models.Model):
+    number       = models.CharField(max_length=50, unique=True)
+    client       = models.ForeignKey("Client", on_delete=models.PROTECT, related_name="invoices")
+    matter       = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="invoices", null=True, blank=True)
+    invoice_date = models.DateField()
+    notes        = models.TextField(blank=True)
+    tax_rate     = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"),
+                                       validators=[MinValueValidator(0)])
+
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"INV {self.number} — {self.client.name}"
+
+    @property
+    def subtotal(self):
+        return sum((li.amount for li in self.lines.all()), Decimal("0.00"))
+
+    @property
+    def tax_amount(self):
+        return (self.subtotal * (self.tax_rate / Decimal("100"))).quantize(Decimal("0.01"))
+
+    @property
+    def total(self):
+        return (self.subtotal + self.tax_amount).quantize(Decimal("0.01"))
+
+
+class InvoiceLine(models.Model):
+    invoice   = models.ForeignKey("Invoice", on_delete=models.CASCADE, related_name="lines")
+    wip       = models.ForeignKey("WIP", on_delete=models.PROTECT, related_name="invoiced_lines")
+    desc      = models.CharField(max_length=255, blank=True)
+    hours     = models.DecimalField(max_digits=6, decimal_places=1)
+    rate      = models.DecimalField(max_digits=10, decimal_places=2, help_text="Snapshot of rate at invoice time")
+    amount    = models.DecimalField(max_digits=12, decimal_places=2)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.invoice.number} — {self.wip.matter.matter_number} — {self.amount}"
+
+
+class Ledger(models.Model):
+    STATUS = [("draft", "Draft"), ("posted", "Posted")]
+    invoice     = models.OneToOneField("Invoice", on_delete=models.CASCADE, related_name="ledger")
+    client      = models.ForeignKey("Client", on_delete=models.PROTECT, related_name="ledger_entries")
+    matter      = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="ledger_entries", null=True, blank=True)
+    subtotal    = models.DecimalField(max_digits=12, decimal_places=2)
+    tax         = models.DecimalField(max_digits=12, decimal_places=2)
+    total       = models.DecimalField(max_digits=12, decimal_places=2)
+    status      = models.CharField(max_length=10, choices=STATUS, default="draft")
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Ledger for {self.invoice.number} — {self.total}"
