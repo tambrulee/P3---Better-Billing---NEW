@@ -1,61 +1,135 @@
 {% load static %}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Better Billing - Create Invoice</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <!-- Custom CSS -->
-     {% load static %}
-     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <meta charset="utf-8">
+  <title>Better Billing — Create Invoice</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <header>
-        <!-- Page Title -->
-     
-    <h1>Better Billing</h1>
-
-    <!-- Navigation -->
-
+<header class="container py-3">
+  <h1>Better Billing</h1>
+  <nav class="my-3 d-flex gap-2">
     <a href="{% url 'index' %}" class="btn btn-primary">Home</a>
     <a href="{% url 'record-time' %}" class="btn btn-primary">Record Hours</a>
+    <a href="{% url 'create-invoice' %}" class="btn btn-primary">Create Invoice</a>
     <a href="{% url 'view-invoice' %}" class="btn btn-primary">View Invoice</a>
-  
-    <!-- Subtitle -->
+  </nav>
+  <h2>Create Invoice</h2>
+</header>
 
-    <h2>Create An Invoice</h2>
-    </header>
-    
-    <main>
-        <form action="post">
-        <div>
-            <label for="item_description">Item Description:</label>
-            <input type="text" id="item_description" name="item_description" required>
-        </div>
-        <div>
-            <label for="quantity">Quantity:</label>
-            <input type="number" id="quantity" name="quantity" required>
-        </div>
-        <div>
-            <label for="price">Price:</label>
-            <input type="number" step="0.01" id="price" name="price" required>
-        </div>
-        <button type="submit">Submit</button>
-
-    </form>
-
-    <div>
-        <button>Add Item</button>
+<main class="container pb-5">
+  {% if messages %}
+    <div class="mb-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} mb-2">{{ message }}</div>
+    {% endfor %}
     </div>
-    </main>
-    
+  {% endif %}
 
-    <footer>
-        <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    </footer>
+  <form method="post" class="card shadow-sm mb-4">
+    <div class="card-body">
+      {% csrf_token %}
 
-    </body>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.number.id_for_label }}">Invoice #</label>
+          {{ form.number }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.invoice_date.id_for_label }}">Invoice Date</label>
+          {{ form.invoice_date }}
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="{{ form.tax_rate.id_for_label }}">Tax %</label>
+          {{ form.tax_rate }}
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.client.id_for_label }}">Client</label>
+          {{ form.client }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.matter.id_for_label }}">Matter (optional)</label>
+          {{ form.matter }}
+        </div>
+
+        <div class="col-12">
+          <label class="form-label" for="{{ form.notes.id_for_label }}">Notes</label>
+          {{ form.notes }}
+        </div>
+      </div>
+
+      <hr>
+
+      <h5 class="mb-3">Select WIP items to include</h5>
+      <p class="text-muted">Choose a Client (and optionally a Matter) to see unbilled WIP.</p>
+
+      {% if wip_items %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th style="width:2rem"></th>
+                <th>Created</th>
+                <th>Matter</th>
+                <th>Fee Earner</th>
+                <th>Hours</th>
+                <th>Activity</th>
+                <th>Narrative</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for w in wip_items %}
+              <tr>
+                <td><input type="checkbox" name="wip_ids" value="{{ w.id }}"></td>
+                <td>{{ w.created_at|date:"Y-m-d H:i" }}</td>
+                <td>{{ w.matter.matter_number }}</td>
+                <td>{{ w.fee_earner.initials }}</td>
+                <td>{{ w.hours_worked }}</td>
+                <td>{{ w.activity_code }}</td>
+                <td class="text-truncate" style="max-width:420px">{{ w.narrative }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info">No unbilled WIP found for the current selection.</div>
+      {% endif %}
+
+      <div class="mt-3 d-flex gap-2">
+        <button type="submit" class="btn btn-success">Create Invoice</button>
+        <!-- quick filter submit: reload GET with current picks -->
+        <a class="btn btn-outline-secondary"
+           href="?client={{ form.client.value }}&matter={{ form.matter.value }}">Refresh WIP</a>
+      </div>
+    </div>
+  </form>
+</main>
+<footer>
+    <script>
+  // Reuse your existing AJAX for Matter filtering (client -> matters)
+  document.addEventListener('DOMContentLoaded', function() {
+    const client = document.getElementById('id_inv_client');
+    const matter = document.getElementById('id_inv_matter');
+    const url = "{% url 'ajax-matter-options' %}";
+    async function loadMatters(cid){
+      const r = await fetch(`${url}?client=${cid}`, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+      matter.innerHTML = await r.text();
+    }
+    if (client) {
+      client.addEventListener('change', e => {
+        const cid = e.target.value;
+        if (cid) loadMatters(cid);
+        else matter.innerHTML = '<option value="">— Select matter —</option>';
+      });
+      if (client.value) loadMatters(client.value);
+    }
+  });
+</script>
+</footer>
+
+</body>
 </html>

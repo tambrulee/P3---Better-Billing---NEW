@@ -1,9 +1,12 @@
+from decimal import Decimal
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 from django.urls import reverse
 from .forms import TimeEntryForm
-from .models import TimeEntry, Matter
+from .models import TimeEntry, Matter, WIP, Invoice, InvoiceLine, Ledger
+from django.db import transaction
+from .forms import InvoiceForm
 
 # Create your views here.
 
@@ -40,3 +43,81 @@ def matter_options(request):
 
 def view_invoice(request):
     return render(request, "better_bill_project/view_invoice.html")
+
+
+def create_invoice(request):
+    """
+    GET  -> shows form; when client/matter chosen, lists unbilled WIP items.
+    POST -> creates Invoice + InvoiceLines, marks WIP billed, writes Ledger.
+    """
+    if request.method == "POST":
+        form = InvoiceForm(request.POST)
+        if form.is_valid():
+            wip_ids = request.POST.getlist("wip_ids")  # checkbox values
+            if not wip_ids:
+                messages.error(request, "Select at least one WIP item to invoice.")
+                return render(request, "better_bill_project/create_invoice.html", {"form": form, "wip_items": []})
+
+            with transaction.atomic():
+                invoice = form.save()  # draft ledger will be created below
+                # fetch WIP items
+                items = list(
+                    WIP.objects.select_related("fee_earner__role", "matter")
+                    .filter(id__in=wip_ids, status="unbilled")
+                )
+
+                if not items:
+                    messages.error(request, "Selected WIP items are no longer available (already billed?).")
+                    return redirect("create-invoice")
+
+                # build lines
+                lines = []
+                for w in items:
+                    # get rate from fee earner role (fallback to 0)
+                    rate = getattr(getattr(w.fee_earner, "role", None), "rate", Decimal("0.00"))
+                    amount = (Decimal(w.hours_worked) * rate).quantize(Decimal("0.01"))
+                    desc = w.narrative or f"{w.matter.matter_number} — {w.activity_code or 'Work'}"
+                    lines.append(InvoiceLine(
+                        invoice=invoice,
+                        wip=w,
+                        desc=desc,
+                        hours=w.hours_worked,
+                        rate=rate,
+                        amount=amount,
+                    ))
+                InvoiceLine.objects.bulk_create(lines)
+
+                # mark WIP billed
+                WIP.objects.filter(id__in=[w.id for w in items]).update(status="billed")
+
+                # create ledger snapshot
+                ledger = Ledger.objects.create(
+                    invoice=invoice,
+                    client=invoice.client,
+                    matter=invoice.matter,
+                    subtotal=invoice.subtotal,
+                    tax=invoice.tax_amount,
+                    total=invoice.total,
+                    status="draft",
+                )
+
+                messages.success(request, f"Invoice {invoice.number} created. Total: {invoice.total}")
+                return redirect("create-invoice")
+    else:
+        form = InvoiceForm(request.GET or None)
+
+    # For GET: if a client/matter is chosen, show unbilled WIP to pick
+    wip_qs = WIP.objects.none()
+    cid = form.data.get("client") if hasattr(form, "data") else None
+    mid = form.data.get("matter") if hasattr(form, "data") else None
+    if cid:
+        wip_qs = WIP.objects.select_related("matter", "fee_earner", "activity_code") \
+            .filter(client_id=cid, status="unbilled")
+        if mid:
+            wip_qs = wip_qs.filter(matter_id=mid)
+
+    return render(
+        request,
+        "better_bill_project/create_invoice.html",
+        {"form": form, "wip_items": wip_qs.order_by("matter__matter_number", "created_at")}
+    )
