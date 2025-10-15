@@ -102,15 +102,14 @@ class TimeEntry(models.Model):
     "Client",
     on_delete=models.PROTECT,
     related_name="time_entries",
-    null=True, blank=True,   # ← TEMP so the column can be added
 )
     matter = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="time_entries")
     fee_earner = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="time_entries")
     activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT,
-                                      related_name="time_entries", null=True, blank=True)
+                                      related_name="time_entries")
     hours_worked = models.DecimalField(max_digits=5, decimal_places=1,
                                        help_text="Time worked, in 0.1-hour increments (6 minutes)")
-    narrative = models.TextField(blank=True)
+    narrative = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -136,10 +135,10 @@ class WIP(models.Model):
     time_entry    = models.OneToOneField("TimeEntry", on_delete=models.CASCADE, related_name="wip")
     matter        = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="wip_items")
     fee_earner    = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="wip_items")
-    activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT, null=True, blank=True, related_name="wip_items")
+    activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT, related_name="wip_items")
 
     hours_worked  = models.DecimalField(max_digits=5, decimal_places=1)  # mirrors TimeEntry
-    narrative     = models.TextField(blank=True)
+    narrative     = models.TextField()
 
     status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="unbilled")
     created_at    = models.DateTimeField(auto_now_add=True)
@@ -154,12 +153,11 @@ class WIP(models.Model):
 class Invoice(models.Model):
     number       = models.CharField(max_length=50, unique=True)
     client       = models.ForeignKey("Client", on_delete=models.PROTECT, related_name="invoices")
-    matter       = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="invoices", null=True, blank=True)
+    matter       = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="invoices")
     invoice_date = models.DateField()
     notes        = models.TextField(blank=True)
     tax_rate     = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"),
                                        validators=[MinValueValidator(0)])
-
     created_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -184,7 +182,7 @@ class Invoice(models.Model):
 class InvoiceLine(models.Model):
     invoice   = models.ForeignKey("Invoice", on_delete=models.CASCADE, related_name="lines")
     wip       = models.ForeignKey("WIP", on_delete=models.PROTECT, related_name="invoiced_lines")
-    desc      = models.CharField(max_length=255, blank=True)
+    desc      = models.CharField(max_length=255)
     hours     = models.DecimalField(max_digits=6, decimal_places=1)
     rate      = models.DecimalField(max_digits=10, decimal_places=2, help_text="Snapshot of rate at invoice time")
     amount    = models.DecimalField(max_digits=12, decimal_places=2)

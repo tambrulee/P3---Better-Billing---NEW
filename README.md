@@ -106,11 +106,26 @@ Under 'Deploy' I connected my repo
 
 # Bugs
 
+** Turn this into table of bugs and fixes with "resolved?" flag(Y)
+
 Unable to connect to Heroku CLI
 
 Resolution: Download Command Line Tools (CLT) - also had to update MacOS to allow CLT to download
 
+Matter ID issue arose during testing of: 
+python manage.py shell -c "from better_bill_project.models import WIP; print(WIP.objects.filter(matter_id='M0032', status='unbilled').count())" 
+- ID field expects number but matter IDs are integers - doesn't effect actual app functionality 
+
 # Testing 
+
+Heroku
+Github
+Django
+Lighthouse
+ESLint
+CSS
+HTML
+Python
 
 heroku open -a betterbilling 
 Check app is active

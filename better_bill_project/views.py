@@ -8,11 +8,14 @@ from .forms import TimeEntryForm, InvoiceForm
 from .models import TimeEntry, Matter, WIP, Invoice, InvoiceLine, Ledger
 from django.db import transaction
 
-# Create your views here.
+# -- Views --
 
+# Index
 def index(request):
     return render(request, "better_bill_project/index.html")
 
+# Time Entry Form
+# Time Entry Form
 def record_time(request):
     if request.method == "POST":
         form = TimeEntryForm(request.POST)
@@ -23,46 +26,48 @@ def record_time(request):
     else:
         form = TimeEntryForm()
 
-    recent_entries = TimeEntry.objects.select_related("client", "matter", "fee_earner").order_by("-created_at")[:10]
+    # TimeEntry likely has matter + fee_earner, not client.
+    # Pull client via the matter relation.
+    recent_entries = (
+        TimeEntry.objects
+        .select_related("matter", "matter__client", "fee_earner")
+        .order_by("-created_at")[:10]
+    )
     return render(request, "better_bill_project/record.html", {"form": form, "recent_entries": recent_entries})
 
-# --- AJAX: return <option> list for matters by client ---
 
+# --- AJAX: returns option list for matters by client (value = matter_number)
 def matter_options(request):
     client_id = request.GET.get("client")
     if not client_id:
         return HttpResponse('<option value="">— Select matter —</option>')
     qs = Matter.objects.filter(client_id=client_id, closed_at__isnull=True).order_by("matter_number")
+    # VALUE = m.id (numeric)
     options = ['<option value="">— Select matter —</option>'] + [
         f'<option value="{m.id}">{m.matter_number} — {m.description}</option>' for m in qs
     ]
     return HttpResponse("".join(options))
 
-def view_invoice(request):
-    return render(request, "better_bill_project/view_invoice.html")
-
-from decimal import Decimal
-from django.utils import timezone
-from django.db import transaction
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .forms import InvoiceForm
-from .models import WIP, Invoice, InvoiceLine, Ledger
 
 def _next_invoice_number():
+    """
+    Generate the next 6-digit sequential invoice number as a string.
+    Starts at '000001'. Uses latest existing Invoice.number if numeric.
+    """
     last = Invoice.objects.order_by("-id").first()
     n = 0
     if last:
+        # try to parse numeric Invoice.number safely
         try:
             n = int("".join(ch for ch in last.number if ch.isdigit()))
         except (TypeError, ValueError):
-            n = last.id or 0
+            n = last.id or 0  # fallback
     return f"{n + 1:06d}"
 
 def create_invoice(request):
     readonly_number = _next_invoice_number()
     readonly_date = timezone.localdate()
-    readonly_tax = Decimal("20.00")
+    readonly_tax = Decimal("20.00")  # percent
 
     if request.method == "POST":
         form = InvoiceForm(request.POST)
@@ -79,7 +84,8 @@ def create_invoice(request):
                     inv.save()
 
                     items = list(
-                        WIP.objects.select_related("fee_earner__role", "matter")
+                        WIP.objects
+                        .select_related("fee_earner__role", "matter", "matter__client")
                         .filter(id__in=wip_ids, status="unbilled")
                     )
                     if not items:
@@ -109,19 +115,26 @@ def create_invoice(request):
     else:
         form = InvoiceForm(request.GET or None)
 
-    # 🔽 THIS BLOCK MUST BE INSIDE THE FUNCTION (not top-level)
-    wip_qs = WIP.objects.none()
-    cid = form.data.get("client") if hasattr(form, "data") else None
-    mid = form.data.get("matter") if hasattr(form, "data") else None
+    # --- Build WIP list for current selection (works for GET and invalid POST) ---
+    # Start from a base queryset so we don't lose results when only 'matter' is set.
+    cid = form.data.get("client") or None
+    mid = form.data.get("matter") or None
+
+    wip_qs = (WIP.objects
+            .select_related("matter", "matter__client", "fee_earner", "activity_code")
+            .filter(status="unbilled"))
+
     if cid:
-        wip_qs = (
-            WIP.objects
-            .select_related("matter", "fee_earner", "activity_code", "matter__client")
-            .filter(matter__client_id=cid, status="unbilled")
-        )
-        if mid:
-            wip_qs = wip_qs.filter(matter_id=mid)
+        wip_qs = wip_qs.filter(matter__client_id=cid)
+    if mid:
+        try:
+            wip_qs = wip_qs.filter(matter_id=int(mid))
+        except (TypeError, ValueError):
+            pass
+
+
     wip_items = wip_qs.order_by("matter__matter_number", "created_at")
+
 
     return render(
         request,
@@ -134,3 +147,9 @@ def create_invoice(request):
             "readonly_tax": readonly_tax,
         },
     )
+
+
+
+# View Invoice
+def view_invoice(request):
+    return render(request, "better_bill_project/view_invoice.html")

@@ -13,7 +13,6 @@
   <nav class="my-3 d-flex gap-2">
     <a href="{% url 'index' %}" class="btn btn-primary">Home</a>
     <a href="{% url 'record-time' %}" class="btn btn-primary">Record Hours</a>
-    <a href="{% url 'create-invoice' %}" class="btn btn-primary">Create Invoice</a>
     <a href="{% url 'view-invoice' %}" class="btn btn-primary">View Invoice</a>
   </nav>
   <h2>Create Invoice</h2>
@@ -51,13 +50,12 @@
     <input class="form-control" value="{{ readonly_tax }}" disabled>
   </div>
 
-  <!-- Client / Matter are still in the form -->
   <div class="col-md-6">
     <label class="form-label" for="{{ form.client.id_for_label }}">Client</label>
     {{ form.client }}
   </div>
   <div class="col-md-6">
-    <label class="form-label" for="{{ form.matter.id_for_label }}">Matter (optional)</label>
+    <label class="form-label" for="{{ form.matter.id_for_label }}">Matter</label>
     {{ form.matter }}
   </div>
 
@@ -110,65 +108,69 @@
         <button type="submit" class="btn btn-success">Create Invoice</button>
         <!-- quick filter submit: reload GET with current picks -->
         <a class="btn btn-outline-secondary"
-           href="?client={{ form.client.value }}&matter={{ form.matter.value }}">Refresh WIP</a>
+   href="?client={{ form.client.value|default:'' }}&matter={{ form.matter.value|default:'' }}">
+  Refresh WIP
+</a>
+
       </div>
     </div>
   </form>
 </main>
 <footer>
-    <script>
-  // Reuse your existing AJAX for Matter filtering (client -> matters)
-  document.addEventListener('DOMContentLoaded', function() {
-    const client = document.getElementById('id_inv_client');
-    const matter = document.getElementById('id_inv_matter');
-    const url = "{% url 'ajax-matter-options' %}";
-    async function loadMatters(cid){
-      const r = await fetch(`${url}?client=${cid}`, {headers:{'X-Requested-With':'XMLHttpRequest'}});
-      matter.innerHTML = await r.text();
-    }
-    if (client) {
-      client.addEventListener('change', e => {
-        const cid = e.target.value;
-        if (cid) loadMatters(cid);
-        else matter.innerHTML = '<option value="">— Select matter —</option>';
-      });
-      if (client.value) loadMatters(client.value);
-    }
-  });
-</script>
+</footer>
 
-<script>
+  <script>
 document.addEventListener('DOMContentLoaded', function() {
   const client = document.getElementById('id_inv_client');
   const matter = document.getElementById('id_inv_matter');
-  const form   = document.querySelector('form');
+  const ajaxURL = "{% url 'ajax-matter-options' %}";
 
-  // When client changes: reload matters via AJAX (you already have this) AND submit form as GET
-  const url = "{% url 'ajax-matter-options' %}";
-  async function loadMatters(cid){
-    const r = await fetch(`${url}?client=${cid}`, {headers:{'X-Requested-With':'XMLHttpRequest'}});
+  const params = new URLSearchParams(window.location.search);
+  const currentClient = params.get('client') || '';
+  const currentMatter = params.get('matter') || '';
+
+  async function loadMatters(cid, selectValue = '') {
+    if (!matter) return;
+    if (!cid) {
+      matter.innerHTML = '<option value="">— Select matter —</option>';
+      return;
+    }
+    const r = await fetch(`${ajaxURL}?client=${encodeURIComponent(cid)}`, {
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
     matter.innerHTML = await r.text();
+    if (selectValue) {
+      const opt = matter.querySelector(`option[value="${CSS.escape(selectValue)}"]`);
+      if (opt) opt.selected = true;
+    }
   }
-  function submitAsGet() {
-    form.method = 'get';
-    form.submit();
+
+  function reloadWith(clientVal, matterVal) {
+    const qs = new URLSearchParams();
+    if (clientVal) qs.set('client', clientVal);
+    if (matterVal) qs.set('matter', matterVal);
+    window.location.search = qs.toString();
   }
+
+  // Initial populate
+  const initialClient = (client && client.value) || currentClient;
+  if (initialClient) loadMatters(initialClient, currentMatter);
 
   if (client) {
     client.addEventListener('change', e => {
       const cid = e.target.value;
-      if (cid) loadMatters(cid);
-      else matter.innerHTML = '<option value="">— Select matter —</option>';
-      submitAsGet();
+      loadMatters(cid);
+      reloadWith(cid, '');
     });
   }
   if (matter) {
-    matter.addEventListener('change', submitAsGet);
+    matter.addEventListener('change', e => {
+      const cid = client ? client.value : currentClient;
+      reloadWith(cid, e.target.value);
+    });
   }
 });
 </script>
-
-</footer>
 
 </body>
 </html>

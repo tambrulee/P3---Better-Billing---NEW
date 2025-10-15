@@ -4,7 +4,7 @@ from import_export.widgets import ForeignKeyWidget, DateTimeWidget
 from import_export.admin import ImportExportModelAdmin
 
 # IMPORTANT: include Role here
-from .models import Client, Personnel, Role, Matter, TimeEntry, ActivityCode, WIP
+from .models import Client, Personnel, Role, Matter, TimeEntry, ActivityCode, WIP, Client, Invoice, InvoiceLine, Ledger
 
 
 # --- Resources ---
@@ -154,4 +154,24 @@ class WIPAdmin(admin.ModelAdmin):
     list_display = ("created_at", "matter", "fee_earner", "hours_worked", "status")
     list_filter  = ("status", "fee_earner", "matter", "created_at")
     search_fields = ("matter__matter_number", "fee_earner__initials", "narrative")
+
+# ------ Invoicing ------
+
+class InvoiceLineInline(admin.TabularInline):
+    model = InvoiceLine
+    extra = 0
+    readonly_fields = ("amount",)
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ("number", "invoice_date", "client", "matter", "tax_rate", "created_at")
+    list_filter  = ("client", "matter", "invoice_date")
+    search_fields = ("number", "client__name", "matter__matter_number")
+    inlines = [InvoiceLineInline]
+
+@admin.register(Ledger)
+class LedgerAdmin(admin.ModelAdmin):
+    list_display = ("invoice", "client", "matter", "subtotal", "tax", "total", "status", "created_at")
+    list_filter  = ("status", "client", "matter", "created_at")
+    search_fields = ("invoice__number", "client__name", "matter__matter_number")
 

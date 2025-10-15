@@ -53,32 +53,34 @@ class TimeEntryForm(forms.ModelForm):
 
 
 class InvoiceForm(forms.ModelForm):
+    matter = forms.ModelChoiceField(
+        queryset=Matter.objects.none(),
+        widget=forms.Select(attrs={"class": "form-select", "id": "id_inv_matter", "required": True})
+    )
+
     class Meta:
         model = Invoice
-        # Exclude the auto/readonly fields
-        fields = ["client", "matter", "notes"]   # number, invoice_date, tax_rate are set in view
+        fields = ["client", "matter", "notes"]
         widgets = {
-            "client": forms.Select(attrs={"class": "form-select", "id": "id_inv_client"}),
-            "matter": forms.Select(attrs={"class": "form-select", "id": "id_inv_matter"}),
-            "notes":  forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
-        labels = {
-            "notes": "Work Summary",
+            "client": forms.Select(attrs={"id": "id_inv_client", "class": "form-select", "required": True}),
+            "matter": forms.Select(attrs={"id": "id_inv_matter", "class": "form-select", "required": True}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["client"].queryset = Client.objects.order_by("name")
-        # start empty; we filter by client in __init__ and via AJAX
-        self.fields["matter"].queryset = Matter.objects.none()
+        self.fields["client"].required = True
+        self.fields["matter"].required = True
 
+        self.fields["client"].queryset = Client.objects.order_by("name")
+
+        # Narrow matters to the selected client
         cid = None
         data = getattr(self, "data", None)
         if data and data.get("client"):
             try:
                 cid = int(data.get("client"))
             except (TypeError, ValueError):
-                pass
+                cid = None
         elif self.instance.pk and self.instance.client_id:
             cid = self.instance.client_id
 
@@ -86,3 +88,13 @@ class InvoiceForm(forms.ModelForm):
             self.fields["matter"].queryset = Matter.objects.filter(
                 client_id=cid, closed_at__isnull=True
             ).order_by("matter_number")
+        else:
+            self.fields["matter"].queryset = Matter.objects.none()
+
+    def clean(self):
+        cleaned = super().clean()
+        client = cleaned.get("client")
+        matter = cleaned.get("matter")  # already resolved to a Matter instance via matter_number
+        if client and matter and matter.client_id != client.id:
+            self.add_error("matter", "Selected matter does not belong to the chosen client.")
+        return cleaned
