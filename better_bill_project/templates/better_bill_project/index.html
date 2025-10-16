@@ -20,9 +20,140 @@
     <a href="{% url 'record-time' %}" class="btn btn-primary">Record Hours</a>
     <a href="{% url 'create-invoice' %}" class="btn btn-primary">Create Invoice</a>
     <a href="{% url 'view-invoice' %}" class="btn btn-primary">View Invoice</a>
-  /header>
+    </header>
 
-    <main></main>
+    <main class="container py-4">
+  <div class="row g-3">
+    <!-- Unbilled Time -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <h5 class="card-title mb-0">Unbilled Time</h5>
+            <a href="{% url 'record-time' %}" class="btn btn-sm btn-outline-primary">+ Log Time</a>
+          </div>
+          <div class="mt-2 small text-muted">Showing latest 10</div>
+          <div class="mt-2">
+            <div class="display-6">{{ wip_total_hours|default:"0.0"|floatformat:1 }}h</div>
+            <div class="text-muted small">Total unbilled hours</div>
+          </div>
+
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>When</th>
+                  <th>Matter</th>
+                  <th class="text-end">Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for w in wip_items %}
+                  <tr>
+                    <td class="small text-muted">{{ w.created_at|date:"Y-m-d H:i" }}</td>
+                    <td class="small">{{ w.matter.matter_number }}</td>
+                    <td class="text-end fw-semibold">{{ w.hours_worked|floatformat:1 }}</td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-muted small">No unbilled items</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Draft Invoices -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <h5 class="card-title mb-0">Draft Invoices</h5>
+            <a href="{% url 'view-invoice' %}?status=draft" class="btn btn-sm btn-outline-secondary">View all</a>
+          </div>
+          <div class="mt-2 small text-muted">Showing latest 10</div>
+
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inv in draft_invoices %}
+                  <tr>
+                    <td class="small">{{ inv.number }}</td>
+                    <td class="small text-muted">{{ inv.invoice_date|date:"Y-m-d" }}</td>
+                    <td class="text-end fw-semibold">
+                      £{{ inv.ledger.total|floatformat:2 }}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-muted small">No draft invoices</td></tr>
+                {% endfor %}
+              </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <th colspan="2" class="text-end">Draft total:</th>
+                  <th class="text-end">£{{ draft_total|floatformat:2 }}</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Posted Invoices -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <h5 class="card-title mb-0">Posted Invoices</h5>
+            <a href="{% url 'view-invoice' %}?status=posted" class="btn btn-sm btn-outline-secondary">View all</a>
+          </div>
+          <div class="mt-2 small text-muted">Showing latest 10</div>
+
+          <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for inv in posted_invoices %}
+                  <tr>
+                    <td class="small">{{ inv.number }}</td>
+                    <td class="small text-muted">{{ inv.invoice_date|date:"Y-m-d" }}</td>
+                    <td class="text-end fw-semibold">
+                      £{{ inv.ledger.total|floatformat:2 }}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" class="text-center text-muted small">No posted invoices</td></tr>
+                {% endfor %}
+              </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <th colspan="2" class="text-end">Posted total:</th>
+                  <th class="text-end">£{{ post_total|floatformat:2 }}</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
     
     <footer>
         <!-- Bootstrap JS -->

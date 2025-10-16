@@ -1,19 +1,70 @@
 from decimal import Decimal
 from django.utils import timezone
+from django.core.paginator import Paginator
+from django.utils.dateparse import parse_date
+from django.db.models import Sum, Prefetch
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 from django.urls import reverse
 from django.template.loader import render_to_string
 from .forms import TimeEntryForm, InvoiceForm
-from .models import TimeEntry, Matter, WIP, Invoice, InvoiceLine, Ledger
+from .models import TimeEntry, Client, Matter, WIP, Invoice, InvoiceLine, Ledger
 from django.db import transaction
 
 # -- Views --
 
-# Index
 def index(request):
-    return render(request, "better_bill_project/index.html")
+    # Unbilled WIP
+    wip_qs = (
+        WIP.objects
+        .select_related("matter", "client")
+        .filter(status="unbilled")
+        .order_by("-created_at")
+    )
+    wip_total_hours = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
+
+    # Draft/Posted via Ledger status (only invoices that HAVE a ledger)
+    draft_qs = (
+        Invoice.objects
+        .select_related("client", "matter", "ledger")
+        .filter(ledger__status="draft")
+        .order_by("-created_at")[:10]
+    )
+    posted_qs = (
+        Invoice.objects
+        .select_related("client", "matter", "ledger")
+        .filter(ledger__status="posted")
+        .order_by("-created_at")[:10]
+    )
+
+    # Totals (aggregate over related ledger fields)
+    draft_totals = draft_qs.aggregate(
+        subtotal=Sum("ledger__subtotal"),
+        tax=Sum("ledger__tax"),
+        total=Sum("ledger__total"),
+    )
+    post_totals = posted_qs.aggregate(
+        subtotal=Sum("ledger__subtotal"),
+        tax=Sum("ledger__tax"),
+        total=Sum("ledger__total"),
+    )
+
+    context = {
+        "wip_items": wip_qs[:10],
+        "wip_total_hours": wip_total_hours,
+
+        "draft_invoices": draft_qs,
+        "draft_subtotal": draft_totals["subtotal"] or Decimal("0.00"),
+        "draft_tax":      draft_totals["tax"]      or Decimal("0.00"),
+        "draft_total":    draft_totals["total"]    or Decimal("0.00"),
+
+        "posted_invoices": posted_qs,
+        "post_subtotal": post_totals["subtotal"] or Decimal("0.00"),
+        "post_tax":      post_totals["tax"]      or Decimal("0.00"),
+        "post_total":    post_totals["total"]    or Decimal("0.00"),
+    }
+    return render(request, "better_bill_project/index.html", context)
 
 # Time Entry Form
 def record_time(request):
@@ -148,4 +199,79 @@ def create_invoice(request):
 
 # View Invoice
 def view_invoice(request):
-    return render(request, "better_bill_project/view_invoice.html")
+    # --- Filters from GET ---
+    number = (request.GET.get("number") or "").strip()
+    client = (request.GET.get("client") or "").strip()
+    matter = (request.GET.get("matter") or "").strip()
+    status = (request.GET.get("status") or "").strip()        # comes from Ledger.status
+    date_from = parse_date(request.GET.get("date_from") or "")
+    date_to   = parse_date(request.GET.get("date_to") or "")
+
+    filters = {
+        "number": number,
+        "client": client,
+        "matter": matter,
+        "status": status,
+        "date_from": request.GET.get("date_from") or "",
+        "date_to": request.GET.get("date_to") or "",
+    }
+
+    # --- Base queryset ---
+    qs = (
+        Invoice.objects
+        .select_related("client", "matter", "ledger")
+        .prefetch_related("lines")           # used if you need per-invoice sums
+        .order_by("-created_at")
+    )
+
+    # --- Apply filters safely ---
+    if number:
+        qs = qs.filter(number__icontains=number)
+    if client:
+        qs = qs.filter(client_id=client)
+    if matter:
+        qs = qs.filter(matter_id=matter)
+    if status:
+        # filter via related Ledger.status
+        qs = qs.filter(ledger__status=status)
+    if date_from:
+        qs = qs.filter(invoice_date__gte=date_from)
+    if date_to:
+        qs = qs.filter(invoice_date__lte=date_to)
+
+    # --- Dropdown data ---
+    clients = Client.objects.order_by("name")
+    # You can narrow matters by client if selected; else show all
+    if client:
+        matters = Matter.objects.filter(client_id=client).order_by("matter_number")
+    else:
+        matters = Matter.objects.order_by("matter_number")[:500]  # cap to avoid huge lists
+
+    # --- Pagination ---
+    paginator = Paginator(qs, 25)
+    page_number = request.GET.get("page") or 1
+    page_obj = paginator.get_page(page_number)
+
+    # --- Page totals (fallback to Invoice computed props if no Ledger) ---
+    page_subtotal = Decimal("0.00")
+    page_tax = Decimal("0.00")
+    page_total = Decimal("0.00")
+    for inv in page_obj.object_list:
+        if getattr(inv, "ledger", None):
+            page_subtotal += inv.ledger.subtotal
+            page_tax      += inv.ledger.tax
+            page_total    += inv.ledger.total
+        else:
+            page_subtotal += inv.subtotal
+            page_tax      += inv.tax_amount
+            page_total    += inv.total
+
+    return render(request, "better_bill_project/view_invoice.html", {
+        "page_obj": page_obj,
+        "filters": filters,
+        "clients": clients,
+        "matters": matters,
+        "page_subtotal": page_subtotal,
+        "page_tax": page_tax,
+        "page_total": page_total,
+    })
