@@ -11,6 +11,11 @@
      <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+    <!-- Permissions - Partners as admin -->
+    {% if perms.better_bill_project.post_invoice %}
+  <a href="{% url 'post-invoice' %}" class="btn btn-warning">Post/Delete Invoices</a>
+{% endif %}
+
 
     <header><!-- Page Title -->
 

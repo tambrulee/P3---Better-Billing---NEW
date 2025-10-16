@@ -11,6 +11,8 @@ from django.template.loader import render_to_string
 from .forms import TimeEntryForm, InvoiceForm
 from .models import TimeEntry, Client, Matter, WIP, Invoice, InvoiceLine, Ledger
 from django.db import transaction
+from django.contrib.auth.decorators import login_required, permission_required
+from django.shortcuts import render, redirect, get_object_or_404
 
 # -- Views --
 
@@ -275,3 +277,75 @@ def view_invoice(request):
         "page_tax": page_tax,
         "page_total": page_total,
     })
+
+@login_required
+@permission_required("better_bill_project.post_invoice", raise_exception=True)
+def post_invoice_view(request):
+    """
+    Partners can:
+      - POST a draft invoice -> ledger.status = 'posted'
+      - DELETE a draft invoice -> remove invoice & ledger, and revert WIP lines to 'unbilled'
+    """
+    if request.method == "POST":
+        action = request.POST.get("action")
+        pk = request.POST.get("invoice_id")
+        invoice = get_object_or_404(Invoice.objects.select_related("ledger"), pk=pk)
+
+        if action == "post":
+            if not invoice.ledger:
+                messages.error(request, "Invoice has no ledger; cannot post.", extra_tags="invoice")
+                return redirect("post-invoice")
+            if invoice.ledger.status == "posted":
+                messages.info(request, "Invoice is already posted.", extra_tags="invoice")
+                return redirect("post-invoice")
+
+            invoice.ledger.status = "posted"
+            invoice.ledger.save(update_fields=["status"])
+            messages.success(request, f"Invoice {invoice.number} posted.", extra_tags="invoice")
+            return redirect("post-invoice")
+
+        elif action == "delete":
+            # Only allow delete while draft
+            if not invoice.ledger or invoice.ledger.status != "draft":
+                messages.error(request, "Only draft invoices can be deleted.", extra_tags="invoice")
+                return redirect("post-invoice")
+
+            with transaction.atomic():
+                # Revert any WIP used by its lines back to 'unbilled'
+                wip_ids = list(invoice.lines.values_list("wip_id", flat=True))
+                if wip_ids:
+                    WIP.objects.filter(id__in=wip_ids).update(status="unbilled")
+                # Deleting invoice will cascade delete lines; OneToOne ledger will be deleted too
+                invoice.delete()
+            messages.success(request, "Draft invoice deleted and WIP reverted to unbilled.", extra_tags="invoice")
+            return redirect("post-invoice")
+
+        else:
+            messages.error(request, "Unknown action.", extra_tags="invoice")
+            return redirect("post-invoice")
+
+    # GET: list draft + posted with totals
+    drafts = (
+        Invoice.objects.select_related("client", "ledger")
+        .filter(ledger__status="draft")
+        .order_by("-created_at")
+    )
+    posted = (
+        Invoice.objects.select_related("client", "ledger")
+        .filter(ledger__status="posted")
+        .order_by("-created_at")
+    )
+    draft_totals = drafts.aggregate(
+        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total")
+    )
+    posted_totals = posted.aggregate(
+        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total")
+    )
+
+    return render(request, "better_bill_project/post_invoice.html", {
+        "drafts": drafts,
+        "posted": posted,
+        "draft_total": draft_totals["total"] or Decimal("0.00"),
+        "posted_total": posted_totals["total"] or Decimal("0.00"),
+    })
+

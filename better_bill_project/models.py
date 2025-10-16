@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
+from django.conf import settings
 import logging, traceback
 log = logging.getLogger(__name__)
 
@@ -60,14 +61,16 @@ class Personnel(models.Model):
     initials = models.CharField(max_length=10, unique=True)
     name     = models.CharField(max_length=255)
     role     = models.ForeignKey("Role", on_delete=models.PROTECT,
-                                 related_name="personnel",
-                                 null=True, blank=True)  # TEMP
+                                 related_name="personnel", null=True, blank=True)
+    user     = models.OneToOneField(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="personnel_profile"
+    )
     class Meta:
         ordering = ["initials"]
 
     def __str__(self):
-        return f"{self.initials} - {self.name} ({self.role.role if self.role_id else self.role_text or '—'})"
- 
+        return f"{self.initials} - {self.name} ({self.role.role if self.role_id else '—'})" 
  # --- Matter lookup ---
 
 class Matter(models.Model):

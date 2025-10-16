@@ -4,6 +4,8 @@ from django import forms
 from django.core.exceptions import ValidationError
 from .models import TimeEntry, Matter, Personnel, ActivityCode, Client, WIP, Invoice
 
+# Time entry form with dynamic matter filtering based on selected client
+
 class TimeEntryForm(forms.ModelForm):
     # helper field ONLY for filtering the matters list
     client = forms.ModelChoiceField(
@@ -65,7 +67,8 @@ class TimeEntryForm(forms.ModelForm):
         """Save a TimeEntry. WIP creation happens in the view."""
         return super().save(commit=commit)
 
-# forms.py
+# Invoice form with dynamic matter filtering 
+
 class InvoiceForm(forms.ModelForm):
     matter = forms.ModelChoiceField(
         queryset=Matter.objects.none(),
@@ -111,4 +114,15 @@ class InvoiceForm(forms.ModelForm):
         if client and matter and matter.client_id != client.id:
             self.add_error("matter", "Selected matter does not belong to the chosen client.")
         return cleaned
+    
+# Customized authentication form with Bootstrap styling
+
+from django.contrib.auth.forms import AuthenticationForm
+
+class StyledAuthenticationForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update({"class": "form-control"})
+        self.fields["password"].widget.attrs.update({"class": "form-control"})
+
 
