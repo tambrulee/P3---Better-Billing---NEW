@@ -10,11 +10,19 @@
 <body>
 <header class="container py-3">
   <h1>Better Billing</h1>
-  <nav class="my-3 d-flex gap-2">
-    <a href="{% url 'index' %}" class="btn btn-primary">Home</a>
+
+  <!-- Log In -->
+  {% include "partials/_topbar.html" %}
+
+  <!-- Navigation -->
+    <a href="{% url 'index' %}" class="btn btn-outline-secondary">Home</a>
     <a href="{% url 'record-time' %}" class="btn btn-primary">Record Hours</a>
+    <a href="{% url 'create-invoice' %}" class="btn btn-primary">Create Invoice</a>
     <a href="{% url 'view-invoice' %}" class="btn btn-primary">View Invoice</a>
-  </nav>
+    <!-- Permissions - Partners as admin -->
+    {% if perms.better_bill_project.post_invoice %}
+    <a href="{% url 'post-invoice' %}" class="btn btn-warning">Post/Delete Invoices</a>
+    {% endif %}
   <h2>Create Invoice</h2>
 </header>
 

@@ -61,6 +61,11 @@ AC: Given outstanding items, When I open reports, Then totals are grouped by agi
 
 # MVP
 
+- Log In
+
+Kim (Partner)
+Chloe (Staff wih recorded hours)
+
 # GIT and Heroku deployment
 
 # CRUD
