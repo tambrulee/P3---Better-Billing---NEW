@@ -8,23 +8,66 @@
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-<header class="container py-3">
-  <!-- Page Title -->
-  <h1>Post / Delete Invoices</h1>
+<header class="sticky-top">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm" data-bs-theme="light">
+    <div class="container">
+      <!-- Brand -->
+      <a class="navbar-brand fw-bold" href="{% url 'index' %}">Better Billing</a>
 
-  <!-- Log In -->
-  {% include "partials/_topbar.html" %}
-  
-    <!-- Navigation -->
-    <a href="{% url 'index' %}" class="btn btn-outline-secondary">Home</a>
-    <a href="{% url 'record-time' %}" class="btn btn-primary">Record Hours</a>
-    <a href="{% url 'create-invoice' %}" class="btn btn-primary">Create Invoice</a>
-    <a href="{% url 'view-invoice' %}" class="btn btn-primary">View Invoice</a>
-    <!-- Permissions - Partners as admin -->
-    {% if perms.better_bill_project.post_invoice %}
-    <a href="{% url 'post-invoice' %}" class="btn btn-warning">Post/Delete Invoices</a>
-    {% endif %}
+      <!-- Mobile toggler -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Collapsible area -->
+      <div class="collapse navbar-collapse" id="mainNav">
+        {% with url_name=request.resolver_match.url_name %}
+        <!-- Left side: primary nav -->
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'index' %}active{% endif %}"
+               aria-current="{% if url_name == 'index' %}page{% endif %}"
+               href="{% url 'index' %}">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'record-time' %}active{% endif %}"
+               aria-current="{% if url_name == 'record-time' %}page{% endif %}"
+               href="{% url 'record-time' %}">Record Hours</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'create-invoice' %}active{% endif %}"
+               aria-current="{% if url_name == 'create-invoice' %}page{% endif %}"
+               href="{% url 'create-invoice' %}">Create Invoice</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'view-invoice' %}active{% endif %}"
+               aria-current="{% if url_name == 'view-invoice' %}page{% endif %}"
+               href="{% url 'view-invoice' %}">View Invoice</a>
+          </li>
+
+          {% if perms.better_bill_project.post_invoice %}
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'post-invoice' %}active{% endif %}"
+               aria-current="{% if url_name == 'post-invoice' %}page{% endif %}"
+               href="{% url 'post-invoice' %}">Post/Delete Invoices</a>
+          </li>
+          {% endif %}
+        </ul>
+        {% endwith %}
+
+        <!-- Right side: login/user info from partial -->
+        <div class="navbar-nav ms-auto align-items-lg-center gap-2">
+          {% include "partials/_topbar.html" %}
+        </div>
+      </div>
+    </div>
+  </nav>
 </header>
+
+  <!-- Page Title -->
+   <h2 class="page-title">Post Invoice</h2>
 
 <main class="container py-4">
   {% if messages %}

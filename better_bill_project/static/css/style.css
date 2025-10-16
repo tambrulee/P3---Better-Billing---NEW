@@ -3,16 +3,10 @@
     text-align: center;
 }
 
-header {
-    margin: 70px;
-}
-
-main {
-    margin-top: 10px;
-}
-
 .btn-primary{
     background-color: green;
     border: olivedrab;
 }
+
+
 

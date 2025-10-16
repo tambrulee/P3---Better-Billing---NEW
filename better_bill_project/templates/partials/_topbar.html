@@ -1,16 +1,19 @@
-{# Only show on non-login pages, and only if the user is authenticated #}
+{# partials/_topbar.html #}
 {% if request.user.is_authenticated and request.resolver_match and request.resolver_match.url_name != 'login' %}
-<header class="border-bottom bg-white">
-  <div class="container py-2 d-flex align-items-center justify-content-between">
-    <div class="small text-muted">
-      Logged in as <strong>{{ request.user.get_short_name|default:request.user.username }}</strong>
-    </div>
+  <div class="d-flex align-items-center gap-2 gap-lg-3">
+    <span class="navbar-text d-none d-md-inline">Logged in as</span>
+    <span class="fw-semibold">{{ request.user.get_short_name|default:request.user.username }}</span>
 
-    {# Use POST for logout (safer) #}
+    {# Optional Account link (only if the route exists) #}
+    {% url 'account' as account_url %}
+    {% if account_url %}
+      <a class="nav-link px-2 d-none d-sm-inline" href="{{ account_url }}">Account</a>
+    {% endif %}
+
     <form method="post" action="{% url 'logout' %}" class="m-0">
       {% csrf_token %}
       <button class="btn btn-outline-secondary btn-sm">Logout</button>
     </form>
   </div>
-</header>
 {% endif %}
+
