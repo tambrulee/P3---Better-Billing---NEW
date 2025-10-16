@@ -1,5 +1,5 @@
 # Python / Django
-__pycache__/
+__pycache__/ 
 *.py[cod]
 *.egg-info/
 
@@ -20,3 +20,7 @@ db.sqlite3
 # IDE
 .vscode/
 .idea/
+.env
+.env.*
+*.env
+!.env.example
