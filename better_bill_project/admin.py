@@ -151,7 +151,7 @@ class TimeEntryAdmin(ImportExportModelAdmin):
 
 @admin.register(WIP)
 class WIPAdmin(admin.ModelAdmin):
-    list_display = ("created_at", "matter", "fee_earner", "hours_worked", "status")
+    list_display = ("created_at", 'client', "matter", "fee_earner", "hours_worked", "status")
     list_filter  = ("status", "fee_earner", "matter", "created_at")
     search_fields = ("matter__matter_number", "fee_earner__initials", "narrative")
 

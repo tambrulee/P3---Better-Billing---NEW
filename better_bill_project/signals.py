@@ -2,6 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import TimeEntry, WIP
 
+
 @receiver(post_save, sender=TimeEntry)
 def create_or_sync_wip(sender, instance: TimeEntry, created, **kwargs):
     """

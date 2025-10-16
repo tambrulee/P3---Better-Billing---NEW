@@ -15,19 +15,32 @@ def index(request):
     return render(request, "better_bill_project/index.html")
 
 # Time Entry Form
-# Time Entry Form
 def record_time(request):
     if request.method == "POST":
         form = TimeEntryForm(request.POST)
         if form.is_valid():
-            entry = form.save()
+            with transaction.atomic():
+                entry = form.save()  # saves TimeEntry
+
+                # ensure there is exactly one WIP for this TimeEntry (OneToOne)
+                WIP.objects.update_or_create(
+                    time_entry=entry,                 # OneToOne anchor (cannot be NULL)
+                    defaults={
+                        "client":        entry.client,
+                        "matter":        entry.matter,
+                        "fee_earner":    entry.fee_earner,
+                        "activity_code": entry.activity_code,
+                        "hours_worked":  entry.hours_worked,
+                        "narrative":     entry.narrative,
+                        "status":        "unbilled",
+                    },
+                )
+
             messages.success(request, f"Time entry saved for {entry.matter.matter_number}.")
             return redirect("record-time")
     else:
         form = TimeEntryForm()
 
-    # TimeEntry likely has matter + fee_earner, not client.
-    # Pull client via the matter relation.
     recent_entries = (
         TimeEntry.objects
         .select_related("matter", "matter__client", "fee_earner")

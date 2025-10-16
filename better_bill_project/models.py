@@ -2,6 +2,8 @@ from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
+import logging, traceback
+log = logging.getLogger(__name__)
 
 # --- Client lookup ---
 class Client(models.Model):
@@ -96,17 +98,11 @@ class ActivityCode(models.Model):
         return f"{self.activity_code} - {self.activity_description}"
 
 # --- Time Entry ---
-
 class TimeEntry(models.Model):
-    client = models.ForeignKey(
-    "Client",
-    on_delete=models.PROTECT,
-    related_name="time_entries",
-)
+    client = models.ForeignKey("Client", on_delete=models.PROTECT, related_name="time_entries")
     matter = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="time_entries")
     fee_earner = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="time_entries")
-    activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT,
-                                      related_name="time_entries")
+    activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT, related_name="time_entries")
     hours_worked = models.DecimalField(max_digits=5, decimal_places=1,
                                        help_text="Time worked, in 0.1-hour increments (6 minutes)")
     narrative = models.TextField()
@@ -116,15 +112,14 @@ class TimeEntry(models.Model):
         ordering = ["-created_at"]
 
     def clean(self):
-        # Ensure the matter selected actually belongs to the chosen client
         if self.matter_id and self.client_id and self.matter.client_id != self.client_id:
             raise ValidationError({"matter": "Selected matter does not belong to the chosen client."})
 
     def __str__(self):
         return f"{self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h"
 
-# --- WIP ---
 
+# --- WIP ---
 class WIP(models.Model):
     STATUS_CHOICES = [
         ("unbilled", "Unbilled"),
@@ -132,12 +127,13 @@ class WIP(models.Model):
         ("written_off", "Written off"),
     ]
 
-    time_entry    = models.OneToOneField("TimeEntry", on_delete=models.CASCADE, related_name="wip")
+    client        = models.ForeignKey("Client", on_delete=models.PROTECT, null=True, blank=True)
     matter        = models.ForeignKey("Matter", on_delete=models.PROTECT, related_name="wip_items")
+    time_entry    = models.OneToOneField("TimeEntry", on_delete=models.CASCADE, related_name="wip")
     fee_earner    = models.ForeignKey("Personnel", on_delete=models.PROTECT, related_name="wip_items")
     activity_code = models.ForeignKey("ActivityCode", on_delete=models.PROTECT, related_name="wip_items")
 
-    hours_worked  = models.DecimalField(max_digits=5, decimal_places=1)  # mirrors TimeEntry
+    hours_worked  = models.DecimalField(max_digits=5, decimal_places=1)
     narrative     = models.TextField()
 
     status        = models.CharField(max_length=20, choices=STATUS_CHOICES, default="unbilled")
@@ -147,8 +143,32 @@ class WIP(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
+    def clean(self):
+        # keep client/matter/time_entry consistent
+        errors = {}
+        if self.matter_id and self.client_id and self.matter.client_id != self.client_id:
+            errors["matter"] = "Selected matter does not belong to the chosen client."
+        if self.time_entry_id:
+            te = self.time_entry
+            if te.matter_id != self.matter_id:
+                errors["time_entry"] = "Time entry’s matter must match this WIP’s matter."
+            if te.client_id != self.client_id:
+                errors["client"] = "Time entry’s client must match this WIP’s client."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.time_entry_id is None:
+            log.error("WIP.save() called without time_entry!\n%s",
+                      "".join(traceback.format_stack(limit=12)))
+            raise ValueError("WIP.time_entry must be set before save()")
+        if self.matter_id and not getattr(self, "client_id", None):
+            self.client_id = self.matter.client_id
+        return super().save(*args, **kwargs)
+
     def __str__(self):
         return f"WIP for {self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h ({self.status})"
+
 
 class Invoice(models.Model):
     number       = models.CharField(max_length=50, unique=True)

@@ -5,42 +5,47 @@ from django.core.exceptions import ValidationError
 from .models import TimeEntry, Matter, Personnel, ActivityCode, Client, WIP, Invoice
 
 class TimeEntryForm(forms.ModelForm):
+    # helper field ONLY for filtering the matters list
+    client = forms.ModelChoiceField(
+        queryset=Client.objects.order_by("name"),
+        required=True,
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+
     class Meta:
-        model = TimeEntry
-        fields = ["client", "matter", "fee_earner", "activity_code", "hours_worked", "narrative"]
-        widgets = {
-            "client": forms.Select(attrs={"class": "form-select", "id": "id_client"}),
-            "matter": forms.Select(attrs={"class": "form-select", "id": "id_matter"}),
-            "fee_earner": forms.Select(attrs={"class": "form-select"}),
-            "activity_code": forms.Select(attrs={"class": "form-select"}),
-            "hours_worked": forms.NumberInput(attrs={"class": "form-control", "step": "0.1", "min": "0"}),
-            "narrative": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
-        }
-        help_texts = {"hours_worked": "Enter time in 0.1-hour increments (6 minutes)."}
+        model = WIP   # or TimeEntry if that’s your model
+        fields = ["matter", "fee_earner", "hours_worked", "activity_code", "narrative"]  # <-- no 'client'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["client"].queryset = Client.objects.order_by("name")
-        self.fields["matter"].queryset = Matter.objects.none()  # start empty until client chosen
-        self.fields["fee_earner"].queryset = Personnel.objects.order_by("initials")
-        self.fields["activity_code"].queryset = ActivityCode.objects.order_by("activity_code")
-        self.fields["activity_code"].empty_label = "— Select activity (optional) —"
 
-        # If we have data (POST) or an instance (editing), filter matters accordingly
-        client_id = None
-        if "client" in self.data:
+        # Narrow matters to the selected client
+        cid = None
+        data = getattr(self, "data", None)
+        if data and data.get("client"):
             try:
-                client_id = int(self.data.get("client"))
+                cid = int(data.get("client"))
             except (TypeError, ValueError):
-                pass
-        elif self.instance.pk and self.instance.client_id:
-            client_id = self.instance.client_id
+                cid = None
+        elif getattr(self.instance, "pk", None):
+            # if editing existing, infer from instance.matter
+            cid = getattr(getattr(self.instance, "matter", None), "client_id", None)
 
-        if client_id:
-            self.fields["matter"].queryset = (
-                Matter.objects.filter(client_id=client_id, closed_at__isnull=True)
-                .order_by("matter_number")
-            )
+        if cid:
+            self.fields["matter"].queryset = Matter.objects.filter(
+                client_id=cid, closed_at__isnull=True
+            ).order_by("matter_number")
+        else:
+            self.fields["matter"].queryset = Matter.objects.none()
+
+    def save(self, commit=True):
+        # Strip helper field so it’s not passed to the model
+        self.cleaned_data.pop("client", None)
+        obj = super().save(commit=False)
+        # Ensure all required model fields are set; client comes via obj.matter.client
+        if commit:
+            obj.save()
+        return obj
 
     def clean_hours_worked(self):
         value = self.cleaned_data.get("hours_worked")
@@ -52,6 +57,7 @@ class TimeEntryForm(forms.ModelForm):
 
 
 
+# forms.py
 class InvoiceForm(forms.ModelForm):
     matter = forms.ModelChoiceField(
         queryset=Matter.objects.none(),
@@ -73,7 +79,6 @@ class InvoiceForm(forms.ModelForm):
 
         self.fields["client"].queryset = Client.objects.order_by("name")
 
-        # Narrow matters to the selected client
         cid = None
         data = getattr(self, "data", None)
         if data and data.get("client"):
@@ -94,7 +99,8 @@ class InvoiceForm(forms.ModelForm):
     def clean(self):
         cleaned = super().clean()
         client = cleaned.get("client")
-        matter = cleaned.get("matter")  # already resolved to a Matter instance via matter_number
+        matter = cleaned.get("matter")
         if client and matter and matter.client_id != client.id:
             self.add_error("matter", "Selected matter does not belong to the chosen client.")
         return cleaned
+
