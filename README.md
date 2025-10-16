@@ -4,6 +4,17 @@ Better Billing a demo app which is built for Legal Billing. The app focuses on t
 
 Lawyers simply input their time worked with a description of the work performed submitted against a client, matter and activiy code. The billing team can then pick up and review the time entries then push them to an randomly generated invoice number. 
 
+# Dependencies
+HTML5
+CSS3
+Bootstrap
+Javascript
+Python
+Django
+SQL
+
+This app also works on the presumption that the business user would have applications that handle the matter, personnel, rates, roles.
+
 # User Stories
 1) Time & Expense Tracking
 
