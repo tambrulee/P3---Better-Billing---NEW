@@ -19,13 +19,20 @@
 </header>
 
 <main class="container pb-5">
+<!-- Validation message if submission successful -->
   {% if messages %}
-    <div class="mb-3">
+  <div class="mb-3">
     {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} mb-2">{{ message }}</div>
+      {% if "invoice" in message.tags %}
+        <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endif %}
     {% endfor %}
-    </div>
-  {% endif %}
+  </div>
+{% endif %}
+
 
   <form method="post" class="card shadow-sm mb-4">
     <div class="card-body">

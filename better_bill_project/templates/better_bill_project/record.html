@@ -23,10 +23,20 @@
 </header>
 
 <main class="container py-4">
-
+<!-- Validation message if submission successful -->
   {% if form.non_field_errors %}
     <div class="alert alert-danger">{{ form.non_field_errors }}</div>
   {% endif %}
+
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+      {% if "invoice" not in message.tags %}
+        <div class="alert alert-{{ message.level_tag }} mb-2">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
 
   <form method="post" action="{% url 'record-time' %}" novalidate>
     {% csrf_token %}

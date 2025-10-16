@@ -106,8 +106,8 @@ def create_invoice(request):
                         status="draft",
                     )
 
-                    messages.success(request, f"Invoice {inv.number} created. Total: £{inv.total}")
-                    return redirect("create-invoice")
+                    messages.success(request, "Invoice created successfully.", extra_tags="invoice")
+        return redirect("create-invoice")  # or wherever you want to land post-PRG
     else:
         form = InvoiceForm(request.GET or None)
 
