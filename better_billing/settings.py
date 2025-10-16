@@ -27,9 +27,19 @@ DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 SECRET_KEY = 'django-insecure-wtz_aawo1+u*^%a26pb0^sh-u2sa#t9v4e5zrf+$3fa)3#nv58'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["betterbilling.herokuapp.com", ".herokuapp.com", "localhost", "127.0.0.1"]
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.template": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+    },
+}
 
 
 # Application definition
@@ -70,15 +80,15 @@ ROOT_URLCONF = 'better_billing.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],  # make sure this folder actually exists
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },

@@ -17,6 +17,6 @@ urlpatterns = [
     ), name="login"),
     path("accounts/", include("django.contrib.auth.urls")),  # login, logout, password change/reset
     path("ajax/matter-options/", views.ajax_matter_options, name="ajax-matter-options"),
-    
-    
 ]
+
+handler404 = "better_bill_project.views.custom_404"

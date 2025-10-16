@@ -349,3 +349,7 @@ def post_invoice_view(request):
         "posted_total": posted_totals["total"] or Decimal("0.00"),
     })
 
+def custom_404(request, exception):
+    return render(request, "errors/404.html", {"marker": "USING CUSTOM 404"}, status=404)
+
+

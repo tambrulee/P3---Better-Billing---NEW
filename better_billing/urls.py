@@ -24,3 +24,5 @@ urlpatterns = [
     path('', index_views.index, name='index'),
     path("", include("better_bill_project.urls")),
 ]
+
+handler404 = "better_bill_project.views.custom_404"
