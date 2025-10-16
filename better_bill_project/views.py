@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib import messages
 from django.urls import reverse
+from django.template.loader import render_to_string
 from .forms import TimeEntryForm, InvoiceForm
 from .models import TimeEntry, Matter, WIP, Invoice, InvoiceLine, Ledger
 from django.db import transaction
@@ -16,50 +17,32 @@ def index(request):
 
 # Time Entry Form
 def record_time(request):
+    recent_entries = TimeEntry.objects.select_related(
+        "matter", "fee_earner"
+    ).order_by("-created_at")[:10]
+
     if request.method == "POST":
         form = TimeEntryForm(request.POST)
         if form.is_valid():
-            with transaction.atomic():
-                entry = form.save()  # saves TimeEntry
-
-                # ensure there is exactly one WIP for this TimeEntry (OneToOne)
-                WIP.objects.update_or_create(
-                    time_entry=entry,                 # OneToOne anchor (cannot be NULL)
-                    defaults={
-                        "client":        entry.client,
-                        "matter":        entry.matter,
-                        "fee_earner":    entry.fee_earner,
-                        "activity_code": entry.activity_code,
-                        "hours_worked":  entry.hours_worked,
-                        "narrative":     entry.narrative,
-                        "status":        "unbilled",
-                    },
-                )
-
-            messages.success(request, f"Time entry saved for {entry.matter.matter_number}.")
+            te = form.save()  # <-- only save TimeEntry
+            messages.success(request, "Time entry saved.")
             return redirect("record-time")
+        else:
+            messages.error(request, "Please correct the errors below.")
     else:
         form = TimeEntryForm()
 
-    recent_entries = (
-        TimeEntry.objects
-        .select_related("matter", "matter__client", "fee_earner")
-        .order_by("-created_at")[:10]
-    )
-    return render(request, "better_bill_project/record.html", {"form": form, "recent_entries": recent_entries})
-
+    return render(request, "better_bill_project/record.html", {
+        "form": form,
+        "recent_entries": recent_entries,
+    })
 
 # --- AJAX: returns option list for matters by client (value = matter_number)
-def matter_options(request):
+def ajax_matter_options(request):
     client_id = request.GET.get("client")
-    if not client_id:
-        return HttpResponse('<option value="">— Select matter —</option>')
-    qs = Matter.objects.filter(client_id=client_id, closed_at__isnull=True).order_by("matter_number")
-    # VALUE = m.id (numeric)
-    options = ['<option value="">— Select matter —</option>'] + [
-        f'<option value="{m.id}">{m.matter_number} — {m.description}</option>' for m in qs
-    ]
-    return HttpResponse("".join(options))
+    matters = Matter.objects.filter(client_id=client_id, closed_at__isnull=True).order_by("matter_number") if client_id else []
+    html = render_to_string("partials/matter_options.html", {"matters": matters})
+    return HttpResponse(html)
 
 
 def _next_invoice_number():

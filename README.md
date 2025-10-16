@@ -122,10 +122,12 @@ Heroku
 Github
 Django
 Lighthouse
+Mobile Responsiveness
 ESLint
 CSS
 HTML
 Python
+
 
 heroku open -a betterbilling 
 Check app is active

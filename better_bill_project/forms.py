@@ -13,8 +13,15 @@ class TimeEntryForm(forms.ModelForm):
     )
 
     class Meta:
-        model = WIP   # or TimeEntry if that’s your model
-        fields = ["matter", "fee_earner", "hours_worked", "activity_code", "narrative"]  # <-- no 'client'
+        model = TimeEntry
+        fields = ["client", "matter", "fee_earner", "activity_code", "hours_worked", "narrative"]
+        widgets = {
+            "matter": forms.Select(attrs={"class": "form-select"}),
+            "fee_earner": forms.Select(attrs={"class": "form-select"}),
+            "activity_code": forms.Select(attrs={"class": "form-select"}),
+            "hours_worked": forms.NumberInput(attrs={"class": "form-control", "step": "0.1", "min": "0"}),
+            "narrative": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,7 +35,6 @@ class TimeEntryForm(forms.ModelForm):
             except (TypeError, ValueError):
                 cid = None
         elif getattr(self.instance, "pk", None):
-            # if editing existing, infer from instance.matter
             cid = getattr(getattr(self.instance, "matter", None), "client_id", None)
 
         if cid:
@@ -38,24 +44,26 @@ class TimeEntryForm(forms.ModelForm):
         else:
             self.fields["matter"].queryset = Matter.objects.none()
 
-    def save(self, commit=True):
-        # Strip helper field so it’s not passed to the model
-        self.cleaned_data.pop("client", None)
-        obj = super().save(commit=False)
-        # Ensure all required model fields are set; client comes via obj.matter.client
-        if commit:
-            obj.save()
-        return obj
+    def clean(self):
+        cleaned = super().clean()
+        client = cleaned.get("client")
+        matter = cleaned.get("matter")
+        if client and matter and matter.client_id != client.id:
+            self.add_error("matter", "Selected matter does not belong to the chosen client.")
+        return cleaned
 
     def clean_hours_worked(self):
         value = self.cleaned_data.get("hours_worked")
         if value is None:
             return value
-        if (Decimal(value) * 10) % 1 != 0:
+        q = Decimal(value)
+        if (q * 10) % 1 != 0:
             raise ValidationError("Hours must be in 0.1-hour increments.")
-        return Decimal(value).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+        return q.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
 
-
+    def save(self, commit=True):
+        """Save a TimeEntry. WIP creation happens in the view."""
+        return super().save(commit=commit)
 
 # forms.py
 class InvoiceForm(forms.ModelForm):
