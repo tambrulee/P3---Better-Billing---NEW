@@ -14,6 +14,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/better_bill_logo.png' %}">
 </head>
 <body>
+  <!-- Header -->
 <header class="sticky-top">
   <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm" data-bs-theme="light">
@@ -71,11 +72,10 @@
     </div>
   </nav>
 </header>
-
-  <!-- Page Title -->
-   <h2 class="page-title">Record Hours</h2>
-
+<!-- Main Section -->
 <main class="container py-4">
+    <!-- Page Title -->
+   <h2 class="page-title">Record Hours</h2>
 <!-- Validation message if submission successful -->
   {% if form.non_field_errors %}
     <div class="alert alert-danger">{{ form.non_field_errors }}</div>
@@ -91,6 +91,7 @@
   </div>
 {% endif %}
 
+<!-- Record Time Form -->
   <form method="post" action="{% url 'record-time' %}" novalidate>
     {% csrf_token %}
 

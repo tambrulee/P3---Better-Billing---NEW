@@ -1,0 +1,12 @@
+*, body{
+    background-color: whitesmoke;
+    text-align: center;
+}
+
+.btn-primary{
+    background-color: green;
+    border: olivedrab;
+}
+
+
+

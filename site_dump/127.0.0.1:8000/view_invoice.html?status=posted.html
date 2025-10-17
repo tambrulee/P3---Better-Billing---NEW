@@ -1,0 +1,33 @@
+
+<!doctype html>
+<html><head>
+  <meta charset="utf-8">
+  <title>Login · Better Billing</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head><body class="bg-light">
+<div class="container py-5" style="max-width:420px;">
+  <h1 class="h4 mb-3 text-center">Better Billing</h1>
+
+  
+
+  <form method="post" action="http://127.0.0.1:8000/accounts/login/" class="card shadow-sm">
+    <div class="card-body">
+      <input type="hidden" name="csrfmiddlewaretoken" value="h7gQx4yAyFEW946WkLIn0osKurT3N1RSDOBx3UETP4bcrb95g9mcagVrCtHV35wI">
+      <div class="mb-3">
+        <label class="form-label" for="id_username">Username</label>
+        <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" class="form-control" required id="id_username">
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="id_password">Password</label>
+        <input type="password" name="password" autocomplete="current-password" class="form-control" required id="id_password">
+      </div>
+      <button class="btn btn-primary w-100">Sign in</button>
+    </div>
+  </form>
+
+  <div class="text-center mt-3">
+    <a href="accounts/password_reset/index.html">Forgot password?</a>
+  </div>
+</div>
+</body>
+</html>
