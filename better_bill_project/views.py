@@ -13,6 +13,7 @@ from .models import TimeEntry, Client, Matter, WIP, Invoice, InvoiceLine, Ledger
 from django.db import transaction
 from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 
 # -- Views --
 
@@ -417,11 +418,56 @@ def record_time(request):
         form = TimeEntryForm()
         form_qe = None
 
-    return render(request, "better_bill_project/record.html", {
+        return render(request, "better_bill_project/record.html", {
         "form": form,
         "recent_entries": recent_entries,
         "is_partner": is_partner,
         "fee_earners": fee_earners,
         "selected_fe": fe_filter,
         "activity_codes": activity_codes,
+        "me_personnel_id": getattr(personnel_for_user, "id", None),
     })
+
+# Delete Time Entry
+
+@login_required
+@require_POST
+def delete_time_entry(request, pk):
+    # Reuse your existing permission rule
+    is_partner = request.user.has_perm("better_bill_project.post_invoice") or request.user.is_superuser
+    personnel_for_user = getattr(request.user, "personnel_profile", None)
+
+    # Keep it strict + cheap
+    te = get_object_or_404(
+        TimeEntry.objects.select_related("wip", "fee_earner"),
+        pk=pk
+    )
+
+    # Only allow deletes when still UNBILLED
+    if not hasattr(te, "wip") or te.wip.status != "unbilled":
+        messages.error(request, "This entry has been billed and can’t be deleted.")
+        return _back_to_record_time(request)
+
+    # Ownership rule: non-partners can only delete their own
+    if not is_partner:
+        if not personnel_for_user or te.fee_earner_id != personnel_for_user.id:
+            messages.error(request, "You can only delete your own unbilled entries.")
+            return _back_to_record_time(request)
+
+    te.delete()
+    messages.success(request, "Time entry deleted.")
+    return _back_to_record_time(request)
+
+
+def _back_to_record_time(request):
+    """
+    Preserve the current fee earner filter (?fe=) if it was present.
+    Prefer hidden field sent by the form; otherwise fall back to Referer.
+    """
+    fe = request.POST.get("fe")
+    if fe:
+        return redirect(f"{reverse('record-time')}?fe={fe}")
+    # Fallback: simple redirect (or use HTTP_REFERER if you prefer)
+    return redirect("record-time")
+
+
