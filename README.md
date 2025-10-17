@@ -132,6 +132,8 @@ Matter ID issue arose during testing of:
 python manage.py shell -c "from better_bill_project.models import WIP; print(WIP.objects.filter(matter_id='M0032', status='unbilled').count())" 
 - ID field expects number but matter IDs are integers - doesn't effect actual app functionality 
 
+Successful submission Validation duplicating on time entry page
+
 # Testing 
 
 Heroku

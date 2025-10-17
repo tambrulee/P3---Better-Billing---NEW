@@ -125,4 +125,25 @@ class StyledAuthenticationForm(AuthenticationForm):
         self.fields["username"].widget.attrs.update({"class": "form-control"})
         self.fields["password"].widget.attrs.update({"class": "form-control"})
 
+# Time Editing
+
+class TimeEntryQuickEditForm(forms.ModelForm):
+    class Meta:
+        model = TimeEntry
+        fields = ["hours_worked", "narrative", "activity_code"]
+        widgets = {
+            "hours_worked": forms.NumberInput(attrs={"class": "form-control", "step": "0.1", "min": "0"}),
+            "narrative": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+            "activity_code": forms.Select(attrs={"class": "form-select"}),
+        }
+
+    def clean_hours_worked(self):
+        value = self.cleaned_data.get("hours_worked")
+        if value is None:
+            return value
+        q = Decimal(value)
+        if (q * 10) % 1 != 0:
+            raise ValidationError("Hours must be in 0.1-hour increments.")
+        return q.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+
 

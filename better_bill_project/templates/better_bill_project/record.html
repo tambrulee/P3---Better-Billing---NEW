@@ -145,35 +145,139 @@
       <a href="{% url 'record-time' %}" class="btn btn-outline-secondary">Reset</a>
     </div>
   </form>
-
-  {% if recent_entries %}
-    <hr>
-    <h3>Recent Entries</h3>
-    <div class="table-responsive">
-      <table class="table table-striped align-middle">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Matter</th>
-            <th>Fee Earner</th>
-            <th>Hours</th>
-            <th>Narrative</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for e in recent_entries %}
-            <tr>
-              <td>{{ e.created_at|date:"Y-m-d H:i" }}</td>
-              <td>{{ e.matter.matter_number }}</td>
-              <td>{{ e.fee_earner.initials }}</td>
-              <td>{{ e.hours_worked }}</td>
-              <td class="small text-muted">{{ e.narrative }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<!-- Partner only view -->
+  {% if is_partner %}
+<form method="get" class="card shadow-sm mb-3">
+  <div class="card-body d-flex flex-wrap align-items-end gap-2">
+    <div>
+      <label class="form-label mb-1">Fee Earner</label>
+      <select name="fe" class="form-select">
+        <option value="">— Everyone —</option>
+        {% for p in fee_earners %}
+          <option value="{{ p.id }}" {% if selected_fe == p.id|stringformat:'s' %}selected{% endif %}>
+            {{ p.initials }} — {{ p.name }}
+          </option>
+        {% endfor %}
+      </select>
     </div>
-  {% endif %}
+    <div class="ms-auto">
+      <button class="btn btn-primary">Apply</button>
+      <a href="{% url 'record-time' %}" class="btn btn-outline-secondary">Clear</a>
+    </div>
+  </div>
+</form>
+{% endif %}
+
+<!-- Recent Entries -->
+{% if recent_entries %}
+  <hr>
+  <div class="d-flex justify-content-between align-items-center">
+    <h3 class="mb-0">Recent Entries</h3>
+    <span class="small text-muted">
+      {% if is_partner %}
+        {% if selected_fe %}Filtered{% else %}All fee earners{% endif %}
+      {% else %}
+        Showing your entries
+      {% endif %}
+    </span>
+  </div>
+
+  <div class="table-responsive mt-2">
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Matter</th>
+          <th>Fee Earner</th>
+          <th>Hours</th>
+          <th>Narrative</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+  {% for e in recent_entries %}
+    <tr>
+      <td>{{ e.created_at|date:"Y-m-d H:i" }}</td>
+      <td>{{ e.matter.matter_number }}</td>
+      <td>{{ e.fee_earner.initials }}</td>
+      <td>{{ e.hours_worked }}</td>
+      <td class="small text-muted">{{ e.narrative }}</td>
+
+      {# STATUS BADGE #}
+      <td>
+        {% if e.wip and e.wip.status == "unbilled" %}
+          <span class="badge text-bg-warning">Unbilled</span>
+        {% elif e.wip and e.wip.status == "billed" %}
+          <span class="badge text-bg-success">Billed</span>
+        {% elif e.wip and e.wip.status == "written_off" %}
+          <span class="badge text-bg-secondary">Written off</span>
+        {% else %}
+          <span class="badge text-bg-light text-muted">—</span>
+        {% endif %}
+      </td>
+
+      {# ACTIONS #}
+      <td class="text-end">
+        {% if e.wip and e.wip.status == "unbilled" %}
+          <button class="btn btn-sm btn-outline-primary"
+                  type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#editRow{{ e.id }}">
+            Edit
+          </button>
+        {% else %}
+          <button class="btn btn-sm btn-outline-secondary" disabled>Locked</button>
+        {% endif %}
+      </td>
+    </tr>
+
+    {# INLINE QUICK-EDIT FORM (only meaningful for unbilled) #}
+    <tr class="collapse" id="editRow{{ e.id }}">
+      <td colspan="7">
+        <form method="post" class="card card-body border-0 bg-light">
+          {% csrf_token %}
+          <input type="hidden" name="update_id" value="{{ e.id }}">
+
+          <div class="row g-2">
+            <div class="col-md-2">
+              <label class="form-label">Hours</label>
+              <input name="hours_worked" type="number" step="0.1" min="0"
+                     class="form-control" value="{{ e.hours_worked }}">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Activity</label>
+              <select name="activity_code" class="form-select">
+                {% for ac in activity_codes %}
+                  <option value="{{ ac.id }}" {% if ac.id == e.activity_code_id %}selected{% endif %}>
+                    {{ ac.activity_code }} — {{ ac.activity_description }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-7">
+              <label class="form-label">Narrative</label>
+              <textarea name="narrative" rows="2" class="form-control">{{ e.narrative }}</textarea>
+            </div>
+          </div>
+
+          <div class="mt-2 d-flex gap-2">
+            <button class="btn btn-success btn-sm" type="submit">Save</button>
+            <button class="btn btn-outline-secondary btn-sm" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#editRow{{ e.id }}">Cancel</button>
+          </div>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+</tbody>
+
+    </table>
+  </div>
+{% endif %}
+
 </main>
 
 <footer class="container pb-4">

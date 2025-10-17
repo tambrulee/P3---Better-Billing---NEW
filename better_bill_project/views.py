@@ -8,8 +8,8 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.urls import reverse
 from django.template.loader import render_to_string
-from .forms import TimeEntryForm, InvoiceForm
-from .models import TimeEntry, Client, Matter, WIP, Invoice, InvoiceLine, Ledger
+from .forms import TimeEntryForm, InvoiceForm, TimeEntryQuickEditForm
+from .models import TimeEntry, Client, Matter, WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
 from django.db import transaction
 from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import render, redirect, get_object_or_404
@@ -352,4 +352,76 @@ def post_invoice_view(request):
 def custom_404(request, exception):
     return render(request, "errors/404.html", {"marker": "USING CUSTOM 404"}, status=404)
 
+@login_required
+def record_time(request):
+    # Who can see everything? (Partners/Admins – reusing your post_invoice perm)
+    is_partner = request.user.has_perm("better_bill_project.post_invoice") or request.user.is_superuser
+    fe_filter = request.GET.get("fe")
+    personnel_for_user = getattr(request.user, "personnel_profile", None)
 
+    base_qs = (TimeEntry.objects
+               .select_related("matter", "fee_earner", "wip")
+               .order_by("-created_at"))
+
+    if is_partner:
+        if fe_filter:
+            base_qs = base_qs.filter(fee_earner_id=fe_filter)
+        fee_earners = Personnel.objects.order_by("initials")
+    else:
+        if personnel_for_user:
+            base_qs = base_qs.filter(fee_earner=personnel_for_user)
+        else:
+            base_qs = base_qs.none()
+        fee_earners = None
+
+    recent_entries = base_qs[:20]
+    activity_codes = ActivityCode.objects.all().order_by("activity_code")
+
+    # --- Handle "quick edit" update submissions ---
+    if request.method == "POST" and request.POST.get("update_id"):
+        te = get_object_or_404(TimeEntry.objects.select_related("wip"), pk=request.POST["update_id"])
+
+        # Permission: non-partners can only edit their own entries
+        if not is_partner:
+            if not personnel_for_user or te.fee_earner_id != personnel_for_user.id:
+                messages.error(request, "You cannot edit this entry.")
+                return redirect("record-time")
+
+        # Only allow edits when still unbilled
+        if not hasattr(te, "wip") or te.wip.status != "unbilled":
+            messages.error(request, "This entry is billed and can’t be edited.")
+            return redirect("record-time")
+
+        form_qe = TimeEntryQuickEditForm(request.POST, instance=te)
+        if form_qe.is_valid():
+            with transaction.atomic():
+                form_qe.save()  # signal will sync WIP fields
+            messages.success(request, "Time entry updated.")
+            # preserve partner filter if present
+            return redirect(f"record-time{'?fe='+fe_filter if is_partner and fe_filter else ''}")
+        else:
+            # Fall through to re-render page with the row open and errors shown
+            pass
+
+    # --- Normal create form flow (unchanged) ---
+    if request.method == "POST" and not request.POST.get("update_id"):
+        form = TimeEntryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Time entry saved.")
+            return redirect("record-time")
+        else:
+            messages.error(request, "Please correct the errors below.")
+        form_qe = None  # not used in this branch
+    else:
+        form = TimeEntryForm()
+        form_qe = None
+
+    return render(request, "better_bill_project/record.html", {
+        "form": form,
+        "recent_entries": recent_entries,
+        "is_partner": is_partner,
+        "fee_earners": fee_earners,
+        "selected_fe": fe_filter,
+        "activity_codes": activity_codes,
+    })
