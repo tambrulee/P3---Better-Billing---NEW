@@ -1,16 +1,94 @@
+{# templates/base.html #}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>{% block title %} · Better Billing{% endblock %}</title>
-    {% load static %}
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-</head><body class="bg-light">
-  </head>
-  <body>
-    {% block content %}{% endblock %}
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Better Billing{% endblock %}</title>
+  <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    
+  {# global CSS/JS here #}
+     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+<!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/better_bill_logo.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/better_bill_logo.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/better_bill_logo.png' %}">
 
-  </body>
+  {# page-specific head additions go here #}
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="sticky-top">{% block header %}
+    <!-- Header -->
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm" data-bs-theme="light">
+    <div class="container">
+      <!-- Brand -->
+      <a class="navbar-brand fw-bold" href="{% url 'index' %}">Better Billing</a>
+
+      <!-- Mobile toggler -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Collapsible area -->
+      <div class="collapse navbar-collapse" id="mainNav">
+        {% with url_name=request.resolver_match.url_name %}
+        <!-- Left side: primary nav -->
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'index' %}active{% endif %}"
+               aria-current="{% if url_name == 'index' %}page{% endif %}"
+               href="{% url 'index' %}">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'record-time' %}active{% endif %}"
+               aria-current="{% if url_name == 'record-time' %}page{% endif %}"
+               href="{% url 'record-time' %}">Record Hours</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'create-invoice' %}active{% endif %}"
+               aria-current="{% if url_name == 'create-invoice' %}page{% endif %}"
+               href="{% url 'create-invoice' %}">Create Invoice</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'view-invoice' %}active{% endif %}"
+               aria-current="{% if url_name == 'view-invoice' %}page{% endif %}"
+               href="{% url 'view-invoice' %}">View Invoice</a>
+          </li>
+
+          {% if perms.better_bill_project.post_invoice %}
+          <li class="nav-item">
+            <a class="nav-link {% if url_name == 'post-invoice' %}active{% endif %}"
+               aria-current="{% if url_name == 'post-invoice' %}page{% endif %}"
+               href="{% url 'post-invoice' %}">Post/Delete Invoices</a>
+          </li>
+          {% endif %}
+        </ul>
+        {% endwith %}
+
+        <!-- Right side: login/user info from partial -->
+        <div class="navbar-nav ms-auto align-items-lg-center gap-2">
+          {% include "partials/_topbar.html" %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+{% endblock %}</header>
+
+  <main id="content">{% block content %}{% endblock %}</main>
+
+  <footer>{% block footer %}{% endblock %}</footer>
+
+  {# page-specific scripts placed at the end of body #}
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+  {% block body_end %}{% endblock %}
+</body>
 </html>

@@ -145,7 +145,35 @@ ESLint
 CSS
 HTML - Downloaded HTML5 Validator via Java (Java installed via Homebrew)
 
+CODE:
+mkdir -p site_dump
+wget -e robots=off --recursive --no-clobber --page-requisites \
+     --adjust-extension --convert-links --no-parent \
+     http://127.0.0.1:8000/ -P site_dump
+
+html5validator --root site_dump --blacklist admin static media \
+               --format text --show-warnings
+
 "file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/admin/index.html":44.3-44.53: error: Element "div" not allowed as child of element "button" in this context. (Suppressing further errors from this subtree.)
+
+Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
+From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/view_invoice.html%3Fstatus=draft.html
+Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
+From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/view_invoice.html%3Fstatus=posted.html
+Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
+From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/index.html
+Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
+From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/create_invoice.html
+Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
+From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/record.html
+Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
+From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/view_invoice.html
+Error: Stray end tag "head".
+From line 9, column 3; to line 9, column 9 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/accounts/password_reset/index.html
+Error: Start tag "body" seen but an element of the same type was already open.
+From line 10, column 3; to line 10, column 8 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/accounts/password_reset/index.html
+Document checking completed.
+(.venv) (base) tambrulee@Tamsins-MacBook-Pro P3 - Better Billing - NEW % 
 
 Python
 
