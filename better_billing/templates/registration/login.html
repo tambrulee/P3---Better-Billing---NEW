@@ -1,10 +1,12 @@
-{% load static %}
-<!doctype html>
-<html><head>
-  <meta charset="utf-8">
-  <title>Login · Better Billing</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-</head><body class="bg-light">
+<!-- Renders general document, html, css & js settings & navigation -->
+{# templates/create_invoice.html #}
+{% extends "base.html" %}
+
+<!-- Page Title -->
+{% block title %}Home{% endblock %}
+
+<!-- Main Section -->
+{% block content %}
 <div class="container py-5" style="max-width:420px;">
   <h1 class="h4 mb-3 text-center">Better Billing</h1>
 
@@ -31,5 +33,8 @@
     <a href="{% url 'password_reset' %}">Forgot password?</a>
   </div>
 </div>
-</body>
-</html>
+{% endblock %}
+
+<!-- Scripts (pulls in bootstrap)-->
+{% block body_end %}
+{% endblock %}
