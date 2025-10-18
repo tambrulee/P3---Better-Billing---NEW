@@ -14,9 +14,8 @@ from pathlib import Path
 import os
 import dj_database_url
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -76,12 +75,19 @@ else:
 
 ROOT_URLCONF = 'better_billing.urls'
 
+import os
+
+# If BASE_DIR is already defined like this, you're good:
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# (That makes BASE_DIR a string path to your project root)
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  
+        "DIRS": [os.path.join(BASE_DIR, "templates")],  # ← use os.path.join here  
         "APP_DIRS": True,
         "OPTIONS": {
+            "debug": True, # Turn off template debug mode for production
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
