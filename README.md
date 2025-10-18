@@ -143,7 +143,10 @@ Lighthouse
 Mobile Responsiveness
 ESLint
 CSS
-HTML
+HTML - Downloaded HTML5 Validator via Java (Java installed via Homebrew)
+
+"file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/admin/index.html":44.3-44.53: error: Element "div" not allowed as child of element "button" in this context. (Suppressing further errors from this subtree.)
+
 Python
 
 

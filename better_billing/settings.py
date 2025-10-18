@@ -14,8 +14,6 @@ from pathlib import Path
 import os
 import dj_database_url
 
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
@@ -81,7 +79,7 @@ ROOT_URLCONF = 'better_billing.urls'
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],  # make sure this folder actually exists
+        "DIRS": [BASE_DIR / "templates"],  
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

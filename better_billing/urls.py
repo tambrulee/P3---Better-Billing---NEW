@@ -18,11 +18,13 @@ from django.contrib import admin
 from django.urls import path, include
 from better_bill_project import views as index_views
 from better_bill_project.views import create_invoice 
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', index_views.index, name='index'),
     path("", include("better_bill_project.urls")),
+        # Force template for password reset
 ]
 
 handler404 = "better_bill_project.views.custom_404"
