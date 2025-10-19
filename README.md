@@ -8,60 +8,28 @@ Lawyers (fee earners) input their time worked with a description of the work per
 
 The user interactions create data that is pushed into the database via the Record Time interface, data is then fed through to WIP and eventually onto the Invoice/Ledger tables. In line with CRUD principles the user can create, read, update and entries based on permissions. 
 
-## NB:
-This version of the application works well in a small law firm scenario, but can be scaled and additional features could be added to handle matter maintainance and rates, for example. Currently, the app works on the presumption that the business user has applications and/or databases that could handle the matter, personnel, rates, roles databases. The project also could be linked to APIs to extend the app's functionality.
+## Dependencies
+The app relies on Django & Python alongside various imports and supporting packages to manage SQL queries, date/time widgets, authentication, validation errors and messages. 
 
-# Dependencies
-HTML5
-CSS3
-Bootstrap
-Javascript
-Python
-Django
-SQL
+HTML5 is used in conjunction with the Django template format. The base template holds all the HTML document syntax alongside the load static command to globally apply the favicons, custom CSS3, Bootstrap CSS and Javascript.
+
+## NB:
+This version of the application works well in a small law firm scenario. It can be scaled or linked to APIs and additional features can be added to handle matter maintainance and rates, for example. Currently, the app relies on the business user having applications and/or databases that could handle the matter, personnel, rates, roles databases. 
 
 # User Stories
-1) Time & Expense Tracking
 
-Start/Stop Timer
+|  **ID** | **Feature / Story**        | **User Goal**                                                                                                          | **Acceptance Criteria (AC)**                                                                                                                                                 | **Notes**                                                                               | **Achieved (Y/N)** | **Screenshot / Evidence** |
+| :-----: | :------------------------- | :--------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :----------------: | :------------------------ |
+| **1.1** | **Record Time**            | As a fee earner, I want to enter hours worked on a matter so I can bill clients accurately.                            | Given I select a matter and input duration, rate, activity code, and narrative, when I save, then a draft time entry is created and appears in the matter’s unbilled totals. | Duration > 0; valid activity code; narrative required; matter must be open.             |                    |                           |
+| **1.2** | **Edit/Lock Time**         | As a practice manager, I want billed time locked once an invoice is approved so entries can’t be changed.              | Given a time entry is on an approved invoice, when a user tries to edit or delete it, then the action is blocked with a “Locked” message.                                    | Locked entries remain viewable; only admins can unlock.                                 |                    |                           |
+| **1.3** | **Record Expenses**        | As a fee earner, I want to record expenses with receipts so costs can be billed.                                       | Given I enter amount, VAT flag, and optional receipt, when I save, then the expense appears in the matter’s unbilled expenses list.                                          | Amount > 0; valid file type; VAT calculated correctly.                                  |                    |                           |
+| **2.1** | **Generate Draft Invoice** | As a fee earner, I want to generate a draft invoice from unbilled time and expenses so I can review it before posting. | Given unbilled items exist, when I click “Create Draft,” then a draft invoice with line items, VAT, and totals is produced.                                                  | Only unbilled items included; draft editable until approved by a partner.               |                    |                           |
+| **2.2** | **Edit Narratives**        | As a fee earner, I want to edit line-item narratives on draft invoices so clients see clear descriptions.              | Given a draft invoice, when I edit a narrative and save, then the preview updates with the new text.                                                                         | Does not overwrite original time entry narrative; text limits and formatting validated. |                    |                           |
+| **2.3** | **Approve & Post Invoice** | As a partner, I want to review and post approved draft invoices so billing is finalised.                               | Given a draft invoice, when I click “Post,” then the invoice becomes posted, linked entries lock, and totals update in reports.                                              | Only partners can post; posted invoices and linked entries are read-only.               |                    |                           |
+| **3.1** | **WIP & Invoice Overview** | As a partner, I want to see total unbilled WIP, draft invoices, and posted invoices to monitor performance.            | Given data exists, when I open reports, then totals appear for unbilled, draft, and posted amounts.                                                                          | Displays total hours, values, and VAT; no aged-debt tracking.                           |                    |                           |
 
-As a fee earner, I want a start/stop timer on a matter, so that my time is captured accurately.
-AC: Given a matter page, When I press Start and then Stop, Then a draft time entry with elapsed time is created.
-
-Manual Time Entry
-
-As a fee earner, I want to log time manually with activity code and narration, so that I can record offline work.
-AC: Given I enter duration, rate, activity code, and narrative, When I save, Then the entry totals appear on the matter.
-
-Edit/Lock Time
-
-As a practice manager, I want to lock time after invoice approval, so that billed entries aren’t altered.
-AC: Given an entry is on an approved invoice, When a user attempts edit/delete, Then the action is blocked with a message.
-
-Record Expenses
-
-As a fee earner, I want to add disbursements (e.g., court fees) with receipts, so that costs are billed.
-AC: Given amount + VAT flag + receipt upload, When I save, Then expense appears in the matter’s unbilled list.
-
-2) Invoicing
-
-Generate Draft Invoice
-
-As a fee earner, I want to generate a draft invoice from unbilled time/expenses, so that I can review before sending.
-AC: Given unbilled items, When I click “Create Draft,” Then a draft with line items, totals, and VAT is produced.
-
-Edit Narratives
-
-As a fee earner, I want to edit line-item narratives on the draft, so that clients see clear descriptions.
-AC: Given a draft invoice, When I edit a narrative and save, Then the PDF preview reflects the change.
-
-
-3) Data Insights
-
-WIP & Aged Debt
-
-As a Partner, I want a high-level overview or billed/unbilled WIP and billed invoices for montioring and reporting purposes.
-Ideal: As a Partner I would like to see which invoices have been settled or part-settled. if there are  outstanding items, when I open reports, then totals are grouped by aging buckets (0–30, 31–60, etc.).
+# UX
+ ### Wire Frames
 
 # MVP
 
