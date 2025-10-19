@@ -26,27 +26,3 @@
 8. ISSUE: W292 [*] No newline at end of file
    --> better_billing/urls.py:30:52
    SOLUTION : Add trailing newline
-
-
-
-
-<!-- LEAVE UNTIL LAST :) -->
-F811 Redefinition of unused `record_time` from line 73
---> better_bill_project/views.py:357:5
-|
-356 | @login_required
-357 | def record_time(request):
-| ^^^^^^^^^^^ `record_time` redefined here
-358 | # Who can see everything? (Partners/Admins – reusing your post_invoice perm)
-359 | is_partner = request.user.has_perm("better_bill_project.post_invoice") or request.user.is_superuser
-|
-::: better_bill_project/views.py:73:5
-|
-72 | # Time Entry Form
-73 | def record_time(request):
-| ----------- previous definition of `record_time` here
-74 | recent_entries = TimeEntry.objects.select_related(
-75 | "matter", "fee_earner"
-|
-help: Remove definition: `record_time`
-

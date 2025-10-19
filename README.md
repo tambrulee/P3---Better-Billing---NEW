@@ -2,7 +2,9 @@
 
 Better Billing a demo app which is built for Legal Billing. The app focuses on the time entry, billing and invoicing side of legal billing and works off a simple database framework. 
 
-Lawyers simply input their time worked with a description of the work performed submitted against a client, matter and activiy code. The billing team can then pick up and review the time entries then push them to an randomly generated invoice number. 
+Lawyers simply input their time worked with a description of the work performed submitted against a client, matter and activiy code. The administrator, in this scenario the Partners, can then pick up and review the time entries then push them to an randomly generated invoice number. 
+
+This version of the application works well in a small law firm scenario, but can be scaled and additional features could be added to handle matter maintainance and rates, for example. The app works on the presumption that the business user has applications and/or databases that could handle the matter, personnel, rates, roles databases. The project also could be linked to APIs to extend the app's functionality.
 
 # Dependencies
 HTML5
@@ -13,7 +15,6 @@ Python
 Django
 SQL
 
-This app also works on the presumption that the business user would have applications that handle the matter, personnel, rates, roles.
 
 # User Stories
 1) Time & Expense Tracking
@@ -51,13 +52,12 @@ As a fee earner, I want to edit line-item narratives on the draft, so that clien
 AC: Given a draft invoice, When I edit a narrative and save, Then the PDF preview reflects the change.
 
 
-3) Revenue
-
+3) Data Insights
 
 WIP & Aged Debt
 
-As a practice manager, I want WIP and aged receivables views, so that I can chase overdue balances.
-AC: Given outstanding items, When I open reports, Then totals are grouped by aging buckets (0–30, 31–60, etc.).
+As a Partner, I want a high-level overview or billed/unbilled WIP and billed invoices for montioring and reporting purposes.
+Ideal: As a Partner I would like to see which invoices have been settled or part-settled. if there are  outstanding items, when I open reports, then totals are grouped by aging buckets (0–30, 31–60, etc.).
 
 # MVP
 
