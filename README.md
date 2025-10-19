@@ -1,10 +1,15 @@
 # Welcome to the Better Billing Project
 
+## What is Better Billing?
 Better Billing a demo app which is built for Legal Billing. The app focuses on the time entry, billing and invoicing side of legal billing and works off a simple database framework. 
 
-Lawyers simply input their time worked with a description of the work performed submitted against a client, matter and activiy code. The administrator, in this scenario the Partners, can then pick up and review the time entries then push them to an randomly generated invoice number. 
+## How Better Billing works 
+Lawyers (fee earners) input their time worked with a description of the work performed submitted against a client, matter and activiy code. The administrator, in this scenario the Partners, can then pick up and review the time entries then push them to an randomly generated invoice number. 
 
-This version of the application works well in a small law firm scenario, but can be scaled and additional features could be added to handle matter maintainance and rates, for example. The app works on the presumption that the business user has applications and/or databases that could handle the matter, personnel, rates, roles databases. The project also could be linked to APIs to extend the app's functionality.
+The user interactions create data that is pushed into the database via the Record Time interface, data is then fed through to WIP and eventually onto the Invoice/Ledger tables. In line with CRUD principles the user can create, read, update and entries based on permissions. 
+
+## NB:
+This version of the application works well in a small law firm scenario, but can be scaled and additional features could be added to handle matter maintainance and rates, for example. Currently, the app works on the presumption that the business user has applications and/or databases that could handle the matter, personnel, rates, roles databases. The project also could be linked to APIs to extend the app's functionality.
 
 # Dependencies
 HTML5
@@ -14,7 +19,6 @@ Javascript
 Python
 Django
 SQL
-
 
 # User Stories
 1) Time & Expense Tracking
