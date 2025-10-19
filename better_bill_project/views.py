@@ -2,17 +2,17 @@ from decimal import Decimal
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.utils.dateparse import parse_date
-from django.db.models import Sum, Prefetch
-from django.shortcuts import render, redirect
+from django.db.models import Sum
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib import messages
 from django.urls import reverse
 from django.template.loader import render_to_string
 from .forms import TimeEntryForm, InvoiceForm, TimeEntryQuickEditForm
-from .models import TimeEntry, Client, Matter, WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
+from .models import TimeEntry, Client, Matter
+from .models import WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
 from django.db import transaction
 from django.contrib.auth.decorators import login_required, permission_required
-from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 
 # -- Views --
@@ -25,7 +25,8 @@ def index(request):
         .filter(status="unbilled")
         .order_by("-created_at")
     )
-    wip_total_hours = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
+    wip_total_hours = wip_qs.aggregate(
+        total=Sum("hours_worked"))["total"] or Decimal("0.0")
 
     # Draft/Posted via Ledger status (only invoices that HAVE a ledger)
     draft_qs = (
@@ -94,7 +95,9 @@ def record_time(request):
 # --- AJAX: returns option list for matters by client (value = matter_number)
 def ajax_matter_options(request):
     client_id = request.GET.get("client")
-    matters = Matter.objects.filter(client_id=client_id, closed_at__isnull=True).order_by("matter_number") if client_id else []
+    matters = Matter.objects.filter(
+        client_id=client_id, closed_at__isnull=True).order_by(
+            "matter_number") if client_id else []
     html = render_to_string("partials/matter_options.html", {"matters": matters})
     return HttpResponse(html)
 
@@ -144,15 +147,21 @@ def create_invoice(request):
 
                     lines = []
                     for w in items:
-                        rate = getattr(getattr(w.fee_earner, "role", None), "rate", Decimal("0.00"))
-                        amount = (Decimal(w.hours_worked) * rate).quantize(Decimal("0.01"))
-                        desc = w.narrative or f"{w.matter.matter_number} — {w.activity_code or 'Work'}"
+                        rate = getattr(
+                            getattr(
+                                w.fee_earner, "role", None), "rate", Decimal("0.00"))
+                        amount = (
+                            Decimal(
+                                w.hours_worked) * rate).quantize(Decimal("0.01"))
+                        desc = w.narrative or f"{
+                            w.matter.matter_number} — {w.activity_code or 'Work'}"
                         lines.append(InvoiceLine(
                             invoice=inv, wip=w, desc=desc,
                             hours=w.hours_worked, rate=rate, amount=amount
                         ))
                     InvoiceLine.objects.bulk_create(lines)
-                    WIP.objects.filter(id__in=[w.id for w in items]).update(status="billed")
+                    WIP.objects.filter(
+                        id__in=[w.id for w in items]).update(status="billed")
 
                     Ledger.objects.create(
                         invoice=inv, client=inv.client, matter=inv.matter,
@@ -160,7 +169,8 @@ def create_invoice(request):
                         status="draft",
                     )
 
-                    messages.success(request, "Invoice created successfully.", extra_tags="invoice")
+                    messages.success(
+                        request, "Invoice created successfully.", extra_tags="invoice")
         return redirect("create-invoice")  # or wherever you want to land post-PRG
     else:
         form = InvoiceForm(request.GET or None)
@@ -171,7 +181,8 @@ def create_invoice(request):
     mid = form.data.get("matter") or None
 
     wip_qs = (WIP.objects
-            .select_related("matter", "matter__client", "fee_earner", "activity_code")
+            .select_related(
+                "matter", "matter__client", "fee_earner", "activity_code")
             .filter(status="unbilled"))
 
     if cid:
@@ -246,9 +257,11 @@ def view_invoice(request):
     clients = Client.objects.order_by("name")
     # You can narrow matters by client if selected; else show all
     if client:
-        matters = Matter.objects.filter(client_id=client).order_by("matter_number")
+        matters = Matter.objects.filter(
+            client_id=client).order_by("matter_number")
     else:
-        matters = Matter.objects.order_by("matter_number")[:500]  # cap to avoid huge lists
+        matters = Matter.objects.order_by(
+            "matter_number")[:500]  # cap to avoid huge lists
 
     # --- Pagination ---
     paginator = Paginator(qs, 25)
@@ -280,35 +293,45 @@ def view_invoice(request):
     })
 
 @login_required
-@permission_required("better_bill_project.post_invoice", raise_exception=True)
+@permission_required(
+    "better_bill_project.post_invoice", raise_exception=True)
 def post_invoice_view(request):
     """
     Partners can:
-      - POST a draft invoice -> ledger.status = 'posted'
-      - DELETE a draft invoice -> remove invoice & ledger, and revert WIP lines to 'unbilled'
+      - POST a draft invoice
+      -> ledger.status = 'posted'
+      - DELETE a draft invoice
+      -> remove invoice & ledger, and revert WIP lines to 'unbilled'
     """
     if request.method == "POST":
         action = request.POST.get("action")
         pk = request.POST.get("invoice_id")
-        invoice = get_object_or_404(Invoice.objects.select_related("ledger"), pk=pk)
+        invoice = get_object_or_404(
+            Invoice.objects.select_related("ledger"), pk=pk)
 
         if action == "post":
             if not invoice.ledger:
-                messages.error(request, "Invoice has no ledger; cannot post.", extra_tags="invoice")
+                messages.error(
+                    request, "Invoice has no ledger; cannot post.",
+                    extra_tags="invoice")
                 return redirect("post-invoice")
             if invoice.ledger.status == "posted":
-                messages.info(request, "Invoice is already posted.", extra_tags="invoice")
+                messages.info(
+                    request, "Invoice is already posted.", extra_tags="invoice")
                 return redirect("post-invoice")
 
             invoice.ledger.status = "posted"
             invoice.ledger.save(update_fields=["status"])
-            messages.success(request, f"Invoice {invoice.number} posted.", extra_tags="invoice")
+            messages.success(
+                request, f"Invoice {invoice.number} posted.", extra_tags="invoice")
             return redirect("post-invoice")
 
         elif action == "delete":
             # Only allow delete while draft
             if not invoice.ledger or invoice.ledger.status != "draft":
-                messages.error(request, "Only draft invoices can be deleted.", extra_tags="invoice")
+                messages.error(
+                    request, "Only draft invoices can be deleted.",
+                    extra_tags="invoice")
                 return redirect("post-invoice")
 
             with transaction.atomic():
@@ -316,9 +339,12 @@ def post_invoice_view(request):
                 wip_ids = list(invoice.lines.values_list("wip_id", flat=True))
                 if wip_ids:
                     WIP.objects.filter(id__in=wip_ids).update(status="unbilled")
-                # Deleting invoice will cascade delete lines; OneToOne ledger will be deleted too
+                # Deleting invoice will cascade delete lines; 
+                # OneToOne ledger will be deleted too
                 invoice.delete()
-            messages.success(request, "Draft invoice deleted and WIP reverted to unbilled.", extra_tags="invoice")
+            messages.success(
+                request, "Draft invoice deleted and WIP reverted to unbilled.",
+                extra_tags="invoice")
             return redirect("post-invoice")
 
         else:
@@ -337,10 +363,14 @@ def post_invoice_view(request):
         .order_by("-created_at")
     )
     draft_totals = drafts.aggregate(
-        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total")
+        subtotal=Sum("ledger__subtotal"),
+        tax=Sum("ledger__tax"),
+        total=Sum("ledger__total")
     )
     posted_totals = posted.aggregate(
-        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total")
+        subtotal=Sum("ledger__subtotal"),
+        tax=Sum("ledger__tax"),
+        total=Sum("ledger__total")
     )
 
     return render(request, "better_bill_project/post_invoice.html", {
@@ -351,14 +381,17 @@ def post_invoice_view(request):
     })
 
 def custom_404(request, exception):
-    return render(request, "errors/404.html", {"marker": "USING CUSTOM 404"}, status=404)
+    return render(
+        request, "errors/404.html", {"marker": "USING CUSTOM 404"}, status=404)
 
 @login_required
 def record_time(request):
     # Who can see everything? (Partners/Admins – reusing your post_invoice perm)
-    is_partner = request.user.has_perm("better_bill_project.post_invoice") or request.user.is_superuser
+    is_partner = request.user.has_perm(
+        "better_bill_project.post_invoice") or request.user.is_superuser
     fe_filter = request.GET.get("fe")
-    personnel_for_user = getattr(request.user, "personnel_profile", None)
+    personnel_for_user = getattr(
+        request.user, "personnel_profile", None)
 
     base_qs = (TimeEntry.objects
                .select_related("matter", "fee_earner", "wip")
@@ -380,17 +413,21 @@ def record_time(request):
 
     # --- Handle "quick edit" update submissions ---
     if request.method == "POST" and request.POST.get("update_id"):
-        te = get_object_or_404(TimeEntry.objects.select_related("wip"), pk=request.POST["update_id"])
+        te = get_object_or_404(
+            TimeEntry.objects.select_related("wip"),
+            pk=request.POST["update_id"])
 
         # Permission: non-partners can only edit their own entries
         if not is_partner:
             if not personnel_for_user or te.fee_earner_id != personnel_for_user.id:
-                messages.error(request, "You cannot edit this entry.")
+                messages.error(
+                    request, "You cannot edit this entry.")
                 return redirect("record-time")
 
         # Only allow edits when still unbilled
         if not hasattr(te, "wip") or te.wip.status != "unbilled":
-            messages.error(request, "This entry is billed and can’t be edited.")
+            messages.error(
+                request, "This entry is billed and can’t be edited.")
             return redirect("record-time")
 
         form_qe = TimeEntryQuickEditForm(request.POST, instance=te)
@@ -399,7 +436,8 @@ def record_time(request):
                 form_qe.save()  # signal will sync WIP fields
             messages.success(request, "Time entry updated.")
             # preserve partner filter if present
-            return redirect(f"record-time{'?fe='+fe_filter if is_partner and fe_filter else ''}")
+            return redirect(
+                f"record-time{'?fe='+fe_filter if is_partner and fe_filter else ''}")
         else:
             # Fall through to re-render page with the row open and errors shown
             pass
@@ -434,7 +472,8 @@ def record_time(request):
 @require_POST
 def delete_time_entry(request, pk):
     # Reuse your existing permission rule
-    is_partner = request.user.has_perm("better_bill_project.post_invoice") or request.user.is_superuser
+    is_partner = request.user.has_perm(
+        "better_bill_project.post_invoice") or request.user.is_superuser
     personnel_for_user = getattr(request.user, "personnel_profile", None)
 
     # Keep it strict + cheap
@@ -445,13 +484,15 @@ def delete_time_entry(request, pk):
 
     # Only allow deletes when still UNBILLED
     if not hasattr(te, "wip") or te.wip.status != "unbilled":
-        messages.error(request, "This entry has been billed and can’t be deleted.")
+        messages.error(
+            request, "This entry has been billed and can’t be deleted.")
         return _back_to_record_time(request)
 
     # Ownership rule: non-partners can only delete their own
     if not is_partner:
         if not personnel_for_user or te.fee_earner_id != personnel_for_user.id:
-            messages.error(request, "You can only delete your own unbilled entries.")
+            messages.error(
+                request, "You can only delete your own unbilled entries.")
             return _back_to_record_time(request)
 
     te.delete()

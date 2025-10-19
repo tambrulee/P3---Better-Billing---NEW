@@ -1,6 +1,6 @@
 from django.urls import path, include
 from . import views
-from .views import index, post_invoice_view, record_time, delete_time_entry
+from .views import post_invoice_view, delete_time_entry
 from django.contrib.auth import views as auth_views
 from .forms import StyledAuthenticationForm
 from django.contrib.auth.decorators import login_required
@@ -26,7 +26,7 @@ urlpatterns = [
         name="password_reset",
     ),
     # login, logout, password change/reset
-    path("accounts/", include("django.contrib.auth.urls")),  
+    path("accounts/", include("django.contrib.auth.urls")),
     # Ajax endpoint for dynamic matter options
     path("ajax/matter-options/", views.ajax_matter_options, name="ajax-matter-options"),
     # Delete time entry

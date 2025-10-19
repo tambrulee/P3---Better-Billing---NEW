@@ -9,10 +9,13 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from dotenv import load_dotenv; load_dotenv()
 from pathlib import Path
-import os
 import dj_database_url
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
@@ -26,23 +29,26 @@ SECRET_KEY = 'django-insecure-wtz_aawo1+u*^%a26pb0^sh-u2sa#t9v4e5zrf+$3fa)3#nv58
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["betterbilling.herokuapp.com", ".herokuapp.com", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["betterbilling.herokuapp.com",
+                 ".herokuapp.com",
+                 "localhost",
+                 "127.0.0.1"]
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "loggers": {
-        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
-        "django.template": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.request":
+        {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.template":
+        {"handlers": ["console"], "level": "ERROR", "propagate": False},
     },
 }
-
 
 # Application definition
 
 INSTALLED_APPS = [
-    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -75,8 +81,6 @@ else:
 
 ROOT_URLCONF = 'better_billing.urls'
 
-import os
-
 # If BASE_DIR is already defined like this, you're good:
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # (That makes BASE_DIR a string path to your project root)
@@ -84,7 +88,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates")],  # ← use os.path.join here  
+        "DIRS": [os.path.join(BASE_DIR, "templates")],  # ← use os.path.join here
         "APP_DIRS": True,
         "OPTIONS": {
             "debug": True, # Turn off template debug mode for production
@@ -93,7 +97,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                'django.template.context_processors.i18n',  
+                'django.template.context_processors.i18n',
             ],
         },
     },
@@ -107,9 +111,6 @@ WSGI_APPLICATION = 'better_billing.wsgi.application'
 
 USE_SSL = True  # Neon/Heroku Postgres need SSL
 
-# pip install dj-database-url
-import dj_database_url, os
-
 DATABASES = {
     "default": dj_database_url.parse(
         os.environ.get("DATABASE_URL"),
@@ -118,28 +119,27 @@ DATABASES = {
     )
 }
 
-
-
-
-
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME':
+        'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME':
+        'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME':
+        'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME':
+        'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -156,7 +156,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = 'static/'
