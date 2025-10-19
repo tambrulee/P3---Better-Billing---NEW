@@ -4,8 +4,8 @@ from import_export.widgets import ForeignKeyWidget, DateTimeWidget
 from import_export.admin import ImportExportModelAdmin
 
 # IMPORTANT: include Role here
-from .models import Client, Personnel, Role, Matter, TimeEntry, ActivityCode, WIP, Client, Invoice, InvoiceLine, Ledger
-
+from .models import Client, Personnel, Role, Matter
+from .models import TimeEntry, ActivityCode, WIP, Invoice, InvoiceLine, Ledger
 
 # --- Resources ---
 
@@ -106,8 +106,10 @@ class RoleAdmin(ImportExportModelAdmin):
 
 @admin.register(Client)
 class ClientAdmin(ImportExportModelAdmin):
-    list_display = ("client_number", "name", "city", "county", "postcode", "phone", "contact")
-    search_fields = ("client_number", "name", "city", "county", "postcode", "phone", "contact")
+    list_display = ("client_number", "name",
+                    "city", "county", "postcode", "phone", "contact")
+    search_fields = ("client_number", "name",
+                    "city", "county", "postcode", "phone", "contact")
     fields = (
         "client_number", "name",
         ("address_line_1", "address_line_2"),
@@ -133,9 +135,11 @@ class PersonnelAdmin(ImportExportModelAdmin):
 @admin.register(Matter)
 class MatterAdmin(ImportExportModelAdmin):
     resource_class = MatterResource
-    list_display = ("matter_number", "client", "lead_fee_earner", "opened_at", "closed_at")
+    list_display = ("matter_number", "client",
+                    "lead_fee_earner", "opened_at", "closed_at")
     list_select_related = ("client", "lead_fee_earner")
-    search_fields = ("matter_number", "description", "client__name", "lead_fee_earner__name")
+    search_fields = ("matter_number", "description",
+                     "client__name", "lead_fee_earner__name")
 
 @admin.register(ActivityCode)
 class ActivityCodeAdmin(ImportExportModelAdmin):
@@ -147,11 +151,13 @@ class TimeEntryAdmin(ImportExportModelAdmin):
     resource_class = TimeEntryResource
     list_display = ("matter", "fee_earner", "hours_worked", "created_at")
     list_select_related = ("matter", "fee_earner")
-    search_fields = ("matter__matter_number", "fee_earner__initials", "activity_code", "narrative")
+    search_fields = ("matter__matter_number",
+                     "fee_earner__initials", "activity_code", "narrative")
 
 @admin.register(WIP)
 class WIPAdmin(admin.ModelAdmin):
-    list_display = ("created_at", 'client', "matter", "fee_earner", "hours_worked", "status")
+    list_display = ("created_at", 'client', "matter",
+                    "fee_earner", "hours_worked", "status")
     list_filter  = ("status", "fee_earner", "matter", "created_at")
     search_fields = ("matter__matter_number", "fee_earner__initials", "narrative")
 
@@ -164,14 +170,16 @@ class InvoiceLineInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ("number", "invoice_date", "client", "matter", "tax_rate", "created_at")
+    list_display = ("number", "invoice_date", "client",
+                    "matter", "tax_rate", "created_at")
     list_filter  = ("client", "matter", "invoice_date")
     search_fields = ("number", "client__name", "matter__matter_number")
     inlines = [InvoiceLineInline]
 
 @admin.register(Ledger)
 class LedgerAdmin(admin.ModelAdmin):
-    list_display = ("invoice", "client", "matter", "subtotal", "tax", "total", "status", "created_at")
+    list_display = ("invoice", "client", "matter", "subtotal",
+                    "tax", "total", "status", "created_at")
     list_filter  = ("status", "client", "matter", "created_at")
     search_fields = ("invoice__number", "client__name", "matter__matter_number")
 

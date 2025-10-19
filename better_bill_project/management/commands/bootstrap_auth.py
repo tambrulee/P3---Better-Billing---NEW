@@ -12,7 +12,7 @@ def norm_username_from_name(name: str) -> str:
     return slug.lower()
 
 class Command(BaseCommand):
-    help = "Create User accounts from Personnel + groups/permissions (Partner & Fee Earner)."
+    help = "Create User accounts from Personnel + groups/permissions."
 
     def handle(self, *args, **opts):
         # --- Create groups
@@ -33,8 +33,10 @@ class Command(BaseCommand):
         )
 
         # Partner: everything (we’ll assign broad perms)
-        partner_perms = Permission.objects.filter(content_type__in=[ct_inv, ct_led, ct_wip, ct_te])
-        partner.permissions.set(partner_perms | Permission.objects.filter(codename="post_invoice"))
+        partner_perms = Permission.objects.filter(
+            content_type__in=[ct_inv, ct_led, ct_wip, ct_te])
+        partner.permissions.set(
+            partner_perms | Permission.objects.filter(codename="post_invoice"))
 
         # Fee Earner: can do everything except Post Invoice page (no post_invoice perm)
         fe_codenames = [
@@ -58,7 +60,10 @@ class Command(BaseCommand):
             email = f"{username}@{DOMAIN}"
             user, made = User.objects.get_or_create(
                 username=username,
-                defaults={"email": email, "first_name": p.name.split()[0] if p.name else "", "last_name": " ".join(p.name.split()[1:]) if p.name else ""},
+                defaults={
+                    "email": email,
+                    "first_name": p.name.split()[0] if p.name else "",
+                    "last_name": " ".join(p.name.split()[1:]) if p.name else ""},
             )
             if made:
                 user.set_password("ChangeMe123!")  # temp password

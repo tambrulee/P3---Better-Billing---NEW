@@ -74,7 +74,7 @@ class Personnel(models.Model):
 
     def __str__(self):
         return f"{
-            self.initials} - {self.name} ({self.role.role if self.role_id else '—'})" 
+            self.initials} - {self.name} ({self.role.role if self.role_id else '—'})"
  # --- Matter lookup ---
 
 class Matter(models.Model):
@@ -131,13 +131,22 @@ class TimeEntry(models.Model):
         ordering = ["-created_at"]
 
     def clean(self):
-        if self.matter_id and self.client_id and self.matter.client_id != self.client_id:
-            raise ValidationError(
-                {"matter": "Selected matter does not belong to the chosen client."})
+        super().clean()
+        if not (self.matter_id and self.client_id):
+            return
+        if self.matter.client_id != self.client_id:
+            raise ValidationError({
+                "matter": "Selected matter does not belong to the chosen client."
+            })
+
 
     def __str__(self):
-        return f"{
-            self.matter.matter_number} | {self.fee_earner.initials} | {self.hours_worked}h"
+        return (
+            f"{self.matter.matter_number} | "
+            f"{self.fee_earner.initials} | "
+            f"{self.hours_worked}h"
+        )
+
 
 
 # --- WIP ---
@@ -175,20 +184,35 @@ class WIP(models.Model):
     class Meta:
         ordering = ["-created_at"]
 
-    def clean(self):
-        errors = {}
-        if self.matter_id and self.client_id and self.matter.client_id != self.client_id:
-            errors[
-                "matter"] = "Selected matter does not belong to the chosen client."
-        if self.time_entry_id:
-            te = self.time_entry
-            if te.matter_id != self.matter_id:
-                errors[
-                    "time_entry"] = "Time entry’s matter must match this WIP’s matter."
-            if te.client_id != self.client_id:
-                errors["client"] = "Time entry’s client must match this WIP’s client."
-        if errors:
-            raise ValidationError(errors)
+
+def clean(self):
+    super().clean()
+
+    errors = {}
+
+    cid = self.client_id
+    mid = self.matter_id
+
+    # Matter ↔ client consistency
+    if mid and cid and self.matter.client_id != cid:
+        errors["matter"] = (
+            "Selected matter does not belong to the chosen client."
+        )
+
+    # Time entry consistency
+    te = self.time_entry if self.time_entry_id else None
+    if te:
+        if te.matter_id != mid:
+            errors["time_entry"] = (
+                "Time entry's matter must match this WIP's matter."
+            )
+        if te.client_id != cid:
+            errors["client"] = (
+                "Time entry's client must match this WIP's client."
+            )
+
+    if errors:
+        raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         if self._state.adding and self.time_entry_id is None:

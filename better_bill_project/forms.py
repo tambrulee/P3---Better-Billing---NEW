@@ -2,7 +2,8 @@
 from decimal import Decimal, ROUND_HALF_UP
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import TimeEntry, Matter, Personnel, ActivityCode, Client, WIP, Invoice
+from .models import TimeEntry, Matter, Client, Invoice
+from django.contrib.auth.forms import AuthenticationForm
 
 # Time entry form with dynamic matter filtering based on selected client
 
@@ -16,12 +17,14 @@ class TimeEntryForm(forms.ModelForm):
 
     class Meta:
         model = TimeEntry
-        fields = ["client", "matter", "fee_earner", "activity_code", "hours_worked", "narrative"]
+        fields = ["client", "matter", "fee_earner",
+                  "activity_code", "hours_worked", "narrative"]
         widgets = {
             "matter": forms.Select(attrs={"class": "form-select"}),
             "fee_earner": forms.Select(attrs={"class": "form-select"}),
             "activity_code": forms.Select(attrs={"class": "form-select"}),
-            "hours_worked": forms.NumberInput(attrs={"class": "form-control", "step": "0.1", "min": "0"}),
+            "hours_worked": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.1", "min": "0"}),
             "narrative": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
@@ -51,7 +54,8 @@ class TimeEntryForm(forms.ModelForm):
         client = cleaned.get("client")
         matter = cleaned.get("matter")
         if client and matter and matter.client_id != client.id:
-            self.add_error("matter", "Selected matter does not belong to the chosen client.")
+            self.add_error(
+                "matter", "Selected matter does not belong to the chosen client.")
         return cleaned
 
     def clean_hours_worked(self):
@@ -67,20 +71,23 @@ class TimeEntryForm(forms.ModelForm):
         """Save a TimeEntry. WIP creation happens in the view."""
         return super().save(commit=commit)
 
-# Invoice form with dynamic matter filtering 
+# Invoice form with dynamic matter filtering
 
 class InvoiceForm(forms.ModelForm):
     matter = forms.ModelChoiceField(
         queryset=Matter.objects.none(),
-        widget=forms.Select(attrs={"class": "form-select", "id": "id_inv_matter", "required": True})
+        widget=forms.Select(
+            attrs={"class": "form-select", "id": "id_inv_matter", "required": True})
     )
 
     class Meta:
         model = Invoice
         fields = ["client", "matter", "notes"]
         widgets = {
-            "client": forms.Select(attrs={"id": "id_inv_client", "class": "form-select", "required": True}),
-            "matter": forms.Select(attrs={"id": "id_inv_matter", "class": "form-select", "required": True}),
+            "client": forms.Select(attrs={
+                    "id": "id_inv_client", "class": "form-select", "required": True}),
+            "matter": forms.Select(attrs={
+                    "id": "id_inv_matter", "class": "form-select", "required": True}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -112,12 +119,11 @@ class InvoiceForm(forms.ModelForm):
         client = cleaned.get("client")
         matter = cleaned.get("matter")
         if client and matter and matter.client_id != client.id:
-            self.add_error("matter", "Selected matter does not belong to the chosen client.")
+            self.add_error(
+                "matter", "Selected matter does not belong to the chosen client.")
         return cleaned
-    
-# Customized authentication form with Bootstrap styling
 
-from django.contrib.auth.forms import AuthenticationForm
+# Customized authentication form with Bootstrap styling
 
 class StyledAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
@@ -132,7 +138,8 @@ class TimeEntryQuickEditForm(forms.ModelForm):
         model = TimeEntry
         fields = ["hours_worked", "narrative", "activity_code"]
         widgets = {
-            "hours_worked": forms.NumberInput(attrs={"class": "form-control", "step": "0.1", "min": "0"}),
+            "hours_worked": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.1", "min": "0"}),
             "narrative": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "activity_code": forms.Select(attrs={"class": "form-select"}),
         }
