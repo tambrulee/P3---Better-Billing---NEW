@@ -3,14 +3,15 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.conf import settings
-import logging, traceback
+import traceback
+import logging
 log = logging.getLogger(__name__)
 
 # --- Client lookup ---
 class Client(models.Model):
     client_number = models.CharField(max_length=6, unique=True)
     name          = models.CharField(max_length=100)
-    
+
     # Address fields (normalized)
     address_line_1 = models.CharField("Address Line 1", max_length=100, blank=True)
     address_line_2 = models.CharField("Address Line 2", max_length=100, blank=True)
@@ -47,8 +48,8 @@ class Client(models.Model):
 
 class Role(models.Model):
     role = models.CharField(max_length=100, unique=True)
-    rate = models.DecimalField(max_digits=10, 
-                               decimal_places=2, 
+    rate = models.DecimalField(max_digits=10,
+                               decimal_places=2,
                                validators=[MinValueValidator(0)])
 
     class Meta:
@@ -72,16 +73,19 @@ class Personnel(models.Model):
         ordering = ["initials"]
 
     def __str__(self):
-        return f"{self.initials} - {self.name} ({self.role.role if self.role_id else '—'})" 
+        return f"{
+            self.initials} - {self.name} ({self.role.role if self.role_id else '—'})" 
  # --- Matter lookup ---
 
 class Matter(models.Model):
     matter_number   = models.CharField(max_length=50, unique=True)
     description     = models.CharField(max_length=255)
     client          = models.ForeignKey(Client,
-                                        on_delete=models.PROTECT, related_name="matters")
+                                        on_delete=models.PROTECT,
+                                        related_name="matters")
     lead_fee_earner = models.ForeignKey(Personnel,
-                                        on_delete=models.PROTECT, related_name="lead_matters")
+                                        on_delete=models.PROTECT,
+                                        related_name="lead_matters")
     opened_at       = models.DateTimeField()
     closed_at       = models.DateTimeField(null=True, blank=True)
 
@@ -90,7 +94,7 @@ class Matter(models.Model):
 
     def __str__(self):
         return f"{self.matter_number} - {self.description or self.client.name}"
-   
+
 # --- Activity code lookup ---
 class ActivityCode(models.Model):
     activity_code        = models.CharField(max_length=50, unique=True)
@@ -107,15 +111,19 @@ class ActivityCode(models.Model):
 # --- Time Entry ---
 class TimeEntry(models.Model):
     client = models.ForeignKey("Client",
-                               on_delete=models.PROTECT, related_name="time_entries")
+                               on_delete=models.PROTECT,
+                               related_name="time_entries")
     matter = models.ForeignKey("Matter",
-                               on_delete=models.PROTECT, related_name="time_entries")
+                               on_delete=models.PROTECT,
+                               related_name="time_entries")
     fee_earner = models.ForeignKey("Personnel",
-                                   on_delete=models.PROTECT, related_name="time_entries")
+                                   on_delete=models.PROTECT,
+                                   related_name="time_entries")
     activity_code = models.ForeignKey("ActivityCode",
-                                      on_delete=models.PROTECT, related_name="time_entries")
+                                      on_delete=models.PROTECT,
+                                      related_name="time_entries")
     hours_worked = models.DecimalField(max_digits=5, decimal_places=1,
-                                       help_text="Time worked, in 0.1-hour increments (6 minutes)")
+                                       help_text="Time worked, in 0.1-hour increments")
     narrative = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -141,15 +149,20 @@ class WIP(models.Model):
     ]
 
     client        = models.ForeignKey("Client",
-                                      on_delete=models.PROTECT, null=True, blank=True)
+                                      on_delete=models.PROTECT,
+                                      null=True, blank=True)
     matter        = models.ForeignKey("Matter",
-                                      on_delete=models.PROTECT, related_name="wip_items")
+                                      on_delete=models.PROTECT,
+                                      related_name="wip_items")
     time_entry    = models.OneToOneField("TimeEntry",
-                                         on_delete=models.CASCADE, related_name="wip")
+                                         on_delete=models.CASCADE,
+                                         related_name="wip")
     fee_earner    = models.ForeignKey("Personnel",
-                                      on_delete=models.PROTECT, related_name="wip_items")
+                                      on_delete=models.PROTECT,
+                                      related_name="wip_items")
     activity_code = models.ForeignKey("ActivityCode",
-                                      on_delete=models.PROTECT, related_name="wip_items")
+                                      on_delete=models.PROTECT,
+                                      related_name="wip_items")
 
     hours_worked  = models.DecimalField(max_digits=5, decimal_places=1)
     narrative     = models.TextField()
@@ -163,7 +176,6 @@ class WIP(models.Model):
         ordering = ["-created_at"]
 
     def clean(self):
-        # keep client/matter/time_entry consistent
         errors = {}
         if self.matter_id and self.client_id and self.matter.client_id != self.client_id:
             errors[
@@ -197,13 +209,14 @@ class WIP(models.Model):
 
 class Invoice(models.Model):
     number       = models.CharField(max_length=50, unique=True)
-    client       = models.ForeignKey("Client", 
+    client       = models.ForeignKey("Client",
                                      on_delete=models.PROTECT, related_name="invoices")
-    matter       = models.ForeignKey("Matter", 
+    matter       = models.ForeignKey("Matter",
                                      on_delete=models.PROTECT, related_name="invoices")
     invoice_date = models.DateField()
     notes        = models.TextField(blank=True)
-    tax_rate     = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"),
+    tax_rate     = models.DecimalField(max_digits=5, decimal_places=2,
+                                       default=Decimal("0.00"),
                                        validators=[MinValueValidator(0)])
     created_at   = models.DateTimeField(auto_now_add=True)
 
@@ -228,8 +241,10 @@ class Invoice(models.Model):
 
 
 class InvoiceLine(models.Model):
-    invoice   = models.ForeignKey("Invoice", on_delete=models.CASCADE, related_name="lines")
-    wip       = models.ForeignKey("WIP", on_delete=models.PROTECT, related_name="invoiced_lines")
+    invoice   = models.ForeignKey("Invoice", on_delete=models.CASCADE,
+                                  related_name="lines")
+    wip       = models.ForeignKey("WIP", on_delete=models.PROTECT,
+                                  related_name="invoiced_lines")
     desc      = models.CharField(max_length=255)
     hours     = models.DecimalField(max_digits=6, decimal_places=1)
     rate      = models.DecimalField(
@@ -240,16 +255,20 @@ class InvoiceLine(models.Model):
         ordering = ["id"]
 
     def __str__(self):
-        return f"{self.invoice.number} — {self.wip.matter.matter_number} — {self.amount}"
+        return f"{
+            self.invoice.number} — {self.wip.matter.matter_number} — {self.amount}"
 
 
 class Ledger(models.Model):
     STATUS = [("draft", "Draft"), ("posted", "Posted")]
-    invoice     = models.OneToOneField("Invoice", on_delete=models.CASCADE, related_name="ledger")
+    invoice     = models.OneToOneField("Invoice", on_delete=models.CASCADE,
+                                       related_name="ledger")
     client      = models.ForeignKey("Client",
-                                    on_delete=models.PROTECT, related_name="ledger_entries")
+                                    on_delete=models.PROTECT,
+                                    related_name="ledger_entries")
     matter      = models.ForeignKey("Matter",
-                                    on_delete=models.PROTECT, related_name="ledger_entries",
+                                    on_delete=models.PROTECT,
+                                    related_name="ledger_entries",
                                     null=True, blank=True)
     subtotal    = models.DecimalField(max_digits=12, decimal_places=2)
     tax         = models.DecimalField(max_digits=12, decimal_places=2)

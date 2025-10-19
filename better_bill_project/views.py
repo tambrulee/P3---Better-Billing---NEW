@@ -248,7 +248,8 @@ def create_invoice(request):
                         .filter(id__in=wip_ids, status="unbilled")
                     )
                     if not items:
-                        messages.error(request, "Selected WIP items are no longer available.")
+                        messages.error(request,
+                                       "Selected WIP items are no longer available.")
                         return redirect("create-invoice")
 
                     lines = []
@@ -445,7 +446,7 @@ def post_invoice_view(request):
                 wip_ids = list(invoice.lines.values_list("wip_id", flat=True))
                 if wip_ids:
                     WIP.objects.filter(id__in=wip_ids).update(status="unbilled")
-                # Deleting invoice will cascade delete lines; 
+                # Deleting invoice will cascade delete lines;
                 # OneToOne ledger will be deleted too
                 invoice.delete()
             messages.success(
