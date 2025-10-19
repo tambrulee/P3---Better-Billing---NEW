@@ -147,8 +147,6 @@ class TimeEntry(models.Model):
             f"{self.hours_worked}h"
         )
 
-
-
 # --- WIP ---
 class WIP(models.Model):
     STATUS_CHOICES = [
