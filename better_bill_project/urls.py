@@ -37,6 +37,12 @@ urlpatterns = [
     # Delete time entry
     path("time-entry/<int:pk>/delete/", delete_time_entry,
          name="timeentry-delete"),
+     # Invoice detail view
+    path("invoices/<int:pk>/", views.invoice_detail, name="invoice-detail"), 
+     # PDF generation for invoice
+    path("invoices/<int:pk>/pdf/", views.invoice_pdf, name="invoice-pdf"),  # NEW
+    
+    
 
 ]
 

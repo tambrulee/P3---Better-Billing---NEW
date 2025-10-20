@@ -1,0 +1,107 @@
+{# templates/better_bill_project/invoice_detail.html #}
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ inv.number }}{% endblock %}
+<style>
+    /* Minimal safe defaults if the CSS file is missing */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 12px; }
+    h1,h2,h3 { margin: 0 0 .4rem; }
+    .meta { margin-bottom: 14px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 6px; border-bottom: 1px solid #ddd; vertical-align: top; }
+    th { text-align: left; }
+    .text-end { text-align: right; }
+    .totals { margin-top: 10px; width: 40%; margin-left: auto; }
+    .totals td { border: none; }
+    .totals .line { border-top: 1px solid #333; }
+    .muted { color: #666; }
+    @page { size: A4; margin: 18mm 15mm; }
+    header, footer { position: fixed; left: 0; right: 0; color: #666; font-size: 10px; }
+    header { top: -10mm; }
+    footer { bottom: -10mm; }
+  </style>
+{% block content %}
+  
+<body>
+<header>
+  <div>Invoice {{ inv.number }} — {{ inv.client.name }}</div>
+</header>
+
+<footer>
+  <div class="muted">Generated on {{ inv.invoice_date|date:"Y-m-d" }}</div>
+</footer>
+
+<main>
+  <h2>Invoice {{ inv.number }}</h2>
+  <div class="meta">
+    <div><strong>Date:</strong> {{ inv.invoice_date|date:"Y-m-d" }}</div>
+    <div><strong>Status:</strong> {{ status|title }}</div>
+    <div><strong>Tax rate:</strong> {{ inv.tax_rate }}%</div>
+  </div>
+
+  <table>
+    <tr>
+      <td style="width:55%">
+        <h3>Bill To</h3>
+        <div><strong>{{ inv.client.client_number }} — {{ inv.client.name }}</strong></div>
+        {% if inv.client.full_address %}
+          <div class="muted">{{ inv.client.full_address }}</div>
+        {% endif %}
+      </td>
+      <td style="width:45%">
+        <h3>Matter</h3>
+        {% if inv.matter %}
+          <div><strong>{{ inv.matter.matter_number }}</strong> — {{ inv.matter.description }}</div>
+        {% else %}
+          <div>—</div>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+
+  {% if inv.notes %}
+    <h3 style="margin-top:14px;">Notes</h3>
+    <p class="muted">{{ inv.notes }}</p>
+  {% endif %}
+
+  <h3 style="margin-top:14px;">Line items</h3>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:4%;">#</th>
+        <th style="width:14%;">Fee Earner</th>
+        <th style="width:12%;">Activity</th>
+        <th>Description</th>
+        <th class="text-end" style="width:10%;">Hours</th>
+        <th class="text-end" style="width:12%;">Rate</th>
+        <th class="text-end" style="width:14%;">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for li in inv.lines.all %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ li.wip.fee_earner.initials }}</td>
+        <td>{{ li.wip.activity_code.activity_code }}</td>
+        <td>{{ li.desc }}</td>
+        <td class="text-end">{{ li.hours|floatformat:1 }}</td>
+        <td class="text-end">£{{ li.rate|floatformat:2 }}</td>
+        <td class="text-end">£{{ li.amount|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="muted">No lines on this invoice.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td>Subtotal</td><td class="text-end">£{{ subtotal|floatformat:2 }}</td></tr>
+    <tr><td>Tax</td><td class="text-end">£{{ tax|floatformat:2 }}</td></tr>
+    <tr class="line"><td><strong>Total</strong></td><td class="text-end"><strong>£{{ total|floatformat:2 }}</strong></td></tr>
+  </table>
+</main>
+{% endblock %}
+
+<!-- Scripts (pulls in bootstrap)-->
+{% block body_end %}
+{% endblock %}

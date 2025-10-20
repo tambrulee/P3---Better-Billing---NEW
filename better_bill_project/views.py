@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.utils import timezone
 from django.core.paginator import Paginator
+import pdfkit
 from django.utils.dateparse import parse_date
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
@@ -14,6 +15,8 @@ from .models import WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
 from django.db import transaction
 from django.contrib.auth.decorators import login_required, permission_required
 from django.views.decorators.http import require_POST
+from playwright.sync_api import sync_playwright
+
 
 # -- Views --
 
@@ -487,10 +490,67 @@ def post_invoice_view(request):
         "posted_total": posted_totals["total"] or Decimal("0.00"),
     })
 
+# Invoice Detail View
+@login_required
+def invoice_detail(request, pk):
+    inv = get_object_or_404(
+        Invoice.objects
+        .select_related("client", "matter", "ledger")
+        .prefetch_related(
+            "lines",
+            "lines__wip",
+            "lines__wip__fee_earner",
+            "lines__wip__activity_code"
+        ),
+        pk=pk
+    )
+
+    # Fallbacks if, for any reason, a ledger doesn't exist
+    subtotal = inv.ledger.subtotal if getattr(inv, "ledger", None) else inv.subtotal
+    tax      = inv.ledger.tax      if getattr(inv, "ledger", None) else inv.tax_amount
+    total    = inv.ledger.total    if getattr(inv, "ledger", None) else inv.total
+    status   = inv.ledger.status   if getattr(inv, "ledger", None) else "—"
+
+    return render(request, "better_bill_project/invoice_detail.html", {
+        "inv": inv,
+        "subtotal": subtotal,
+        "tax": tax,
+        "total": total,
+        "status": status,
+    })
+
+
+# PDF generation view 
+@login_required
+def invoice_pdf(request, pk):
+    inv = get_object_or_404(
+        Invoice.objects
+        .select_related("client", "matter", "ledger")
+        .prefetch_related("lines", "lines__wip", "lines__wip__fee_earner", "lines__wip__activity_code"),
+        pk=pk
+    )
+
+    subtotal = inv.ledger.subtotal if getattr(inv, "ledger", None) else inv.subtotal
+    tax      = inv.ledger.tax      if getattr(inv, "ledger", None) else inv.tax_amount
+    total    = inv.ledger.total    if getattr(inv, "ledger", None) else inv.total
+    status   = inv.ledger.status   if getattr(inv, "ledger", None) else "draft"
+
+    html = render_to_string("better_bill_project/invoice_pdf.html", {
+        "inv": inv, "subtotal": subtotal, "tax": tax, "total": total, "status": status,
+    }, request=request)
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        # Base URL lets relative links (e.g. {% static %}) resolve if you use absolute paths in the template
+        page.set_content(html, wait_until="load")
+        pdf_bytes = page.pdf(format="A4", print_background=True, margin={"top":"18mm","right":"15mm","bottom":"18mm","left":"15mm"})
+        browser.close()
+
+    resp = HttpResponse(pdf_bytes, content_type="application/pdf")
+    resp["Content-Disposition"] = f'inline; filename="Invoice-{inv.number}.pdf"'
+    return resp
+
 def custom_404(request, exception):
     return render(
         request, "errors/404.html", {"marker": "USING CUSTOM 404"}, status=404)
-
-
-
-

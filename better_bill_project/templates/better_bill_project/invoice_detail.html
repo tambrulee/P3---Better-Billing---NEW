@@ -1,0 +1,108 @@
+{# templates/better_bill_project/invoice_detail.html #}
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ inv.number }}{% endblock %}
+
+{% block content %}
+<main class="container py-4">
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="page-title mb-0">Invoice {{ inv.number }}</h2>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-primary btn-sm" href="{% url 'invoice-pdf' inv.pk %}" target="_blank">
+      Download PDF
+    </a>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'view-invoice' %}">&larr; Back to invoices</a>
+  </div>
+</div>
+
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="fw-semibold mb-1">Client</div>
+          <div>{{ inv.client.client_number }} — {{ inv.client.name }}</div>
+          {% if inv.client.full_address %}
+            <div class="text-muted small mt-2">{{ inv.client.full_address }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="fw-semibold mb-1">Matter</div>
+          {% if inv.matter %}
+            <div>{{ inv.matter.matter_number }} — {{ inv.matter.description }}</div>
+          {% else %}
+            <div>—</div>
+          {% endif %}
+          <div class="mt-2"><span class="fw-semibold">Date:</span> {{ inv.invoice_date|date:"Y-m-d" }}</div>
+          <div><span class="fw-semibold">Status:</span> {{ status|title }}</div>
+          <div><span class="fw-semibold">Tax rate:</span> {{ inv.tax_rate }}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between"><span>Subtotal</span><span>£{{ subtotal|floatformat:2 }}</span></div>
+          <div class="d-flex justify-content-between"><span>Tax</span><span>£{{ tax|floatformat:2 }}</span></div>
+          <hr class="my-2">
+          <div class="d-flex justify-content-between fw-bold"><span>Total</span><span>£{{ total|floatformat:2 }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if inv.notes %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="fw-semibold mb-1">Notes</div>
+        <div class="text-prewrap">{{ inv.notes }}</div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Line entries</h5>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fee Earner</th>
+              <th>Activity</th>
+              <th>Description</th>
+              <th class="text-end">Hours</th>
+              <th class="text-end">Rate</th>
+              <th class="text-end">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for li in inv.lines.all %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ li.wip.fee_earner.initials }}</td>
+                <td>{{ li.wip.activity_code.activity_code }}</td>
+                <td>{{ li.desc }}</td>
+                <td class="text-end">{{ li.hours|floatformat:1 }}</td>
+                <td class="text-end">£{{ li.rate|floatformat:2 }}</td>
+                <td class="text-end fw-semibold">£{{ li.amount|floatformat:2 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="7" class="text-muted">No lines on this invoice.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+<!-- Scripts (pulls in bootstrap)-->
+{% block body_end %}
+{% endblock %}

@@ -85,7 +85,11 @@
           {% for inv in page_obj %}
             {% with led=inv.ledger %}
             <tr>
-              <td>{{ inv.number }}</td>
+              <td>
+                <a href="{% url 'invoice-detail' inv.pk %}">
+                  {{ inv.number }}
+                </a>
+              </td>
               <td>{{ inv.invoice_date|date:"Y-m-d" }}</td>
               <td>{{ inv.client.client_number }} — {{ inv.client.name }}</td>
               <td>{% if inv.matter %}{{ inv.matter.matter_number }} — {{ inv.matter.description }}{% else %}—{% endif %}</td>
