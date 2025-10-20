@@ -6,7 +6,7 @@ __pycache__/
 # Virtual env
 .venv/
 
-# DB / media (if local)
+# DB / media
 db.sqlite3
 /staticfiles/
 /media/

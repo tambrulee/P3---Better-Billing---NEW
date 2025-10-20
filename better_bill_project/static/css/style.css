@@ -4,9 +4,104 @@
 }
 
 .btn-primary{
-    background-color: green;
+    background-color: rgb(128, 0, 109);
     border: olivedrab;
 }
+
+/* === Brand palette (tweak these 3 lines to taste) === */
+:root{
+  --brand-h: 142;           /* emerald-ish green */
+  --brand-s: 72%;
+  --brand-l: 36%;
+  --brand: hsl(var(--brand-h) var(--brand-s) var(--brand-l));
+  --brand-700: hsl(var(--brand-h) var(--brand-s) calc(var(--brand-l) - 10%));
+  --brand-900: hsl(var(--brand-h) var(--brand-s) calc(var(--brand-l) - 18%));
+  --brand-tint-12: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / .12);
+  --brand-tint-18: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / .18);
+  --brand-ring: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / .45);
+}
+
+/* Optional: set Bootstrap’s primary feel to your brand */
+.navbar, .btn-primary, .text-primary { --bs-primary: var(--brand); }
+
+/* Header base */
+.navbar { background-color: #fff; border-bottom: 1px solid hsl(0 0% 92%); }
+.navbar .navbar-brand { color: var(--brand-900); }
+.navbar .navbar-brand:hover { color: var(--brand); }
+
+/* Links: pill, animated underline, better contrast */
+.navbar .nav-link{
+  position: relative;
+  border-radius: .6rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: .6rem .85rem;
+  transition: background-color .15s ease, color .15s ease, box-shadow .15s ease, transform .1s ease;
+  text-decoration: none;
+  /* gradient underline (hidden by default) */
+  background-image: linear-gradient(to right, var(--brand), var(--brand-700));
+  background-repeat: no-repeat;
+  background-size: 0% 3px;
+  background-position: left calc(100% - 4px);
+}
+
+/* Hover: green tint + show gradient underline */
+.navbar .nav-link:hover{
+  background-color: var(--brand-tint-12);
+  color: var(--brand-900);
+  text-decoration: none;
+  background-size: 100% 3px;
+}
+
+/* Focus-visible: juicy green ring (keyboard users) */
+.navbar .nav-link:focus-visible,
+.navbar .navbar-toggler:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 .28rem var(--brand-ring);
+}
+
+/* Active/current page: stronger pill + left accent bar */
+.navbar .nav-link.active,
+.navbar .nav-link[aria-current="page"]{
+  background-color: var(--brand-tint-18);
+  color: var(--brand-900) !important;
+  transform: translateY(-1px);
+}
+.navbar .nav-link.active::before,
+.navbar .nav-link[aria-current="page"]::before{
+  content: "";
+  position: absolute;
+  left: -.5rem; top: 14%; bottom: 14%;
+  width: .28rem; border-radius: .28rem;
+  background: var(--brand);
+}
+
+/* Toggler: larger target + ring */
+.navbar-toggler{ padding: .6rem .8rem; border-radius: .6rem; border-color: var(--brand); }
+.navbar-toggler:hover{ background-color: var(--brand-tint-12); }
+
+/* Skip link (keeps from being hidden for keyboard nav) */
+.visually-hidden-focusable:not(:focus):not(:focus-within){
+  position: absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip: rect(0,0,0,0); white-space:nowrap; border:0;
+}
+.visually-hidden-focusable:focus,
+.visually-hidden-focusable:focus-within{
+  position: absolute; left: 1rem; top: .75rem;
+  padding: .5rem .75rem; background: #fff; border: 2px solid var(--brand); border-radius: .6rem;
+  box-shadow: 0 0 0 .25rem var(--brand-ring); z-index: 1050;
+}
+
+/* Touch targets a bit bigger on mobile */
+@media (pointer: coarse){
+  .navbar .nav-link{ padding: .8rem 1rem; }
+}
+
+/* Respect reduced motion users */
+@media (prefers-reduced-motion: reduce){
+  .navbar .nav-link{ transition: none; }
+}
+
 
 
 

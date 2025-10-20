@@ -2,17 +2,18 @@
 {# templates/record.html #}
 
 <!-- Page Title -->
-{% block title %}Home{% endblock %}
+{% block title %}Record Hours{% endblock %}
 
 <!-- Main Section -->
 {% block content %}
-<main class="container py-4">
-    <!-- Page Title -->
-   <h2 class="page-title">Record Hours</h2>
 <!-- Validation message if submission successful -->
   {% if form.non_field_errors %}
     <div class="alert alert-danger">{{ form.non_field_errors }}</div>
   {% endif %}
+<main class="container py-4">
+  
+    <!-- Page Title -->
+   <h2 class="page-title">Record Hours</h2>
 
   {% if messages %}
   <div class="mb-3">
