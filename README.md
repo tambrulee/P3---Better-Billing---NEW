@@ -9,7 +9,7 @@ Lawyers (fee earners) input their time worked with a description of the work per
 The user interactions create data that is pushed into the database via the Record Time interface, data is then fed through to WIP and eventually onto the Invoice/Ledger tables. In line with CRUD principles the user can create, read, update and entries based on permissions. 
 
 ## Dependencies
-The app relies on Django & Python alongside various imports and supporting packages to manage SQL queries, date/time widgets, authentication, validation errors and messages. 
+The app relies on Django & Python alongside various imports and supporting packages to manage AJAX, SQL queries, date/time widgets, authentication, validation errors and messages. 
 
 HTML5 is used in conjunction with the Django template format. The base template holds all the HTML document syntax alongside the load static command to globally apply the favicons, custom CSS3, Bootstrap CSS and Javascript.
 
@@ -18,25 +18,162 @@ This version of the application works well in a small law firm scenario. It can 
 
 # User Stories
 
-|  **ID** | **Feature / Story**        | **User Goal**                                                                                                          | **Acceptance Criteria (AC)**                                                                                                                                                 | **Notes**                                                                               | **Achieved (Y/N)** | **Screenshot / Evidence** |
-| :-----: | :------------------------- | :--------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :----------------: | :------------------------ |
-| **1.1** | **Record Time**            | As a fee earner, I want to enter hours worked on a matter so I can bill clients accurately.                            | Given I select a matter and input duration, rate, activity code, and narrative, when I save, then a draft time entry is created and appears in the matter’s unbilled totals. | Duration > 0; valid activity code; narrative required; matter must be open.             |                    |                           |
-| **1.2** | **Edit/Lock Time**         | As a practice manager, I want billed time locked once an invoice is approved so entries can’t be changed.              | Given a time entry is on an approved invoice, when a user tries to edit or delete it, then the action is blocked with a “Locked” message.                                    | Locked entries remain viewable; only admins can unlock.                                 |                    |                           |
-| **1.3** | **Record Expenses**        | As a fee earner, I want to record expenses with receipts so costs can be billed.                                       | Given I enter amount, VAT flag, and optional receipt, when I save, then the expense appears in the matter’s unbilled expenses list.                                          | Amount > 0; valid file type; VAT calculated correctly.                                  |                    |                           |
-| **2.1** | **Generate Draft Invoice** | As a fee earner, I want to generate a draft invoice from unbilled time and expenses so I can review it before posting. | Given unbilled items exist, when I click “Create Draft,” then a draft invoice with line items, VAT, and totals is produced.                                                  | Only unbilled items included; draft editable until approved by a partner.               |                    |                           |
-| **2.2** | **Edit Narratives**        | As a fee earner, I want to edit line-item narratives on draft invoices so clients see clear descriptions.              | Given a draft invoice, when I edit a narrative and save, then the preview updates with the new text.                                                                         | Does not overwrite original time entry narrative; text limits and formatting validated. |                    |                           |
-| **2.3** | **Approve & Post Invoice** | As a partner, I want to review and post approved draft invoices so billing is finalised.                               | Given a draft invoice, when I click “Post,” then the invoice becomes posted, linked entries lock, and totals update in reports.                                              | Only partners can post; posted invoices and linked entries are read-only.               |                    |                           |
-| **3.1** | **WIP & Invoice Overview** | As a partner, I want to see total unbilled WIP, draft invoices, and posted invoices to monitor performance.            | Given data exists, when I open reports, then totals appear for unbilled, draft, and posted amounts.                                                                          | Displays total hours, values, and VAT; no aged-debt tracking.                           |                    |                           |
+## 🧮 Project Summary – Better Billing
+
+This section documents how the **core billing workflow** has been implemented in the Better Billing project to meet the outlined user stories.  
+The system enables fee earners to record time and expenses, generate invoices, and give partners a clear overview of WIP (Work In Progress) and billing status.  
+
+---
+
+### **1.1 Record Time**
+**Goal:**  
+Allow fee earners to record hours worked on matters for accurate client billing.
+
+**Implementation Details:**  
+- The **TimeEntry** model captures key data: `matter`, `fee_earner`, `activity_code`, `hours_worked`, and `narrative`.  
+- The **TimeEntryForm** enforces validation rules ensuring positive durations, valid activity codes, and required narratives.  
+- When a new entry is created, it’s linked to an **open matter** and saved as **unbilled (draft)**.  
+- A **recent entries list** displays the last ten submissions for easy reference.  
+- Django messages confirm successful saves or validation errors.
+
+ **Achieved:** The manual time entry workflow functions as expected and correctly updates the matter’s unbilled totals.
+
+**Links:**  
+[Time entry interface](/readme_docs/user_stories/record_hours.png),  
+[Line item entries](/readme_docs/user_stories/recent_entries.png)
+
+---
+
+### **1.2 Edit/Lock Time**
+**Goal:**  
+Prevent editing or deletion of time entries once they are billed or included in a posted invoice.
+
+**Implementation Details:**  
+- Conditional logic disables editing when an entry’s related invoice has `status="posted"`.  
+- The UI hides or disables edit/delete buttons for locked entries.  
+- Attempted edits trigger a warning (“Locked – entry linked to posted invoice”).  
+- Only admins can override this for audit purposes.
+
+ **Achieved:** Time entries are correctly locked after billing, preserving financial data integrity.
+
+**Links:**  
+[Locked entry message](/readme_docs/user_stories/locked_entry.png)
+
+---
+
+### **1.3 Record Expenses**
+**Goal:**  
+Allow fee earners to record recoverable expenses and attach receipts.
+
+**Implementation Details:**  
+- The **Expense** model captures `amount`, `vat_flag`, `receipt`, and `matter`.  
+- File validation ensures accepted types (PDF, JPG, PNG).  
+- VAT is auto-calculated when applicable.  
+- Saved expenses appear in the **unbilled expenses** list and feed into draft invoices.
+
+ **Achieved:** Expense capture, VAT handling, and linkage to invoice generation are working as intended.
+
+**Links:**  
+[Expense entry form](/readme_docs/user_stories/record_expense.png),  
+[Unbilled expense list](/readme_docs/user_stories/unbilled_expenses.png)
+
+---
+
+### **2.1 Generate Draft Invoice**
+**Goal:**  
+Enable fee earners to generate draft invoices from unbilled time and expenses.
+
+**Implementation Details:**  
+- The **Invoice** model aggregates all unbilled **WIP** and **Expense** entries for a given matter or client.  
+- Drafts include calculated subtotals, VAT, and totals via model property methods.  
+- Once generated, items are flagged as **drafted** to prevent reuse.  
+- Drafts remain editable until approved by a partner.
+
+ **Achieved:** Draft invoice generation works seamlessly, pulling unbilled time and expenses together.
+
+**Links:**  
+[Draft invoice view](/readme_docs/user_stories/draft_invoice.png),  
+[Invoice summary](/readme_docs/user_stories/invoice_summary.png)
+
+---
+
+### **2.2 Edit Narratives**
+**Goal:**  
+Allow fee earners to refine line-item narratives on draft invoices before posting.
+
+**Implementation Details:**  
+- Editable narrative fields are exposed at the **invoice line** level.  
+- Updates are stored independently, preserving original time entry data.  
+- Validation limits and formatting checks ensure clarity.  
+- Live updates via AJAX refresh the preview immediately after saving.
+
+ **Achieved:** Narrative editing updates the invoice draft without altering original time entries.
+
+**Links:**  
+[Narrative edit form](/readme_docs/user_stories/edit_narrative.png),  
+[Preview update](/readme_docs/user_stories/narrative_preview.png)
+
+---
+
+### **2.3 Approve & Post Invoice**
+**Goal:**  
+Allow partners to approve and post invoices, finalising billing.
+
+**Implementation Details:**  
+- The **“Post”** button is visible only to users with the Partner role.  
+- Posting changes invoice status to `posted` and locks linked WIP/Expense entries.  
+- Posted invoices are read-only and excluded from new drafts.  
+- Totals update dynamically in the reports view.
+
+ **Achieved:** Approval and posting workflows function correctly with appropriate access control.
+
+**Links:**  
+[Invoice approval view](/readme_docs/user_stories/approve_invoice.png),  
+[Posted invoice summary](/readme_docs/user_stories/posted_invoice.png)
+
+---
+
+### **3.1 WIP & Invoice Overview**
+**Goal:**  
+Provide partners with a high-level overview of WIP, draft invoices, and posted invoices.
+
+**Implementation Details:**  
+- The **WIP dashboard** aggregates totals for:
+  - Unbilled time  
+  - Draft invoices  
+  - Posted invoices  
+- Data grouped by matter shows hours, values, and VAT.  
+- Partners can drill down into categories for details.  
+- No aged-debt tracking (intentionally excluded).  
+- Access restricted to partner-level users.
+
+ **Achieved:** Dashboard provides clear and concise billing overviews for partners.
+
+**Links:**  
+[WIP summary view](/readme_docs/user_stories/wip_overview.png),  
+[Invoice totals chart](/readme_docs/user_stories/invoice_overview.png)
+
+---
+
+## Technical Summary
+- **Backend:** Django ORM, model forms, and class-based views manage all CRUD operations.  
+- **Validation:** Form-level checks plus business rules embedded in model clean methods.  
+- **Frontend:** Django templates (DTL), Bootstrap for layout, and JavaScript for interactivity.  
+- **Security:** Role-based permissions ensure appropriate visibility and control.  
+- **Data Integrity:** Locked entries and cascading updates ensure consistent invoice totals.  
+- **Storage:** Local file storage for uploaded receipts and related documents.  
+
+---
+
+## Overall Status
+All user stories from **1.1 through 3.1** have been successfully implemented and verified through functional testing.  
+The application now provides a full workflow — from time and expense recording to invoicing and performance reporting.
+
+
 
 # UX
  ### Wire Frames
 
-# MVP
-
-- Log In
-
-Kim (Partner)
-Chloe (Staff wih recorded hours)
 
 # GIT and Heroku deployment
 
