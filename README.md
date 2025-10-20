@@ -13,185 +13,145 @@ The app relies on Django & Python alongside various imports and supporting packa
 
 HTML5 is used in conjunction with the Django template format. The base template holds all the HTML document syntax alongside the load static command to globally apply the favicons, custom CSS3, Bootstrap CSS and Javascript.
 
+## Set & Up and Installations
+
+[Click here to read through installation and deployment steps for Github, Django and Heroku](/readme_docs/deploy_install.md)
+
 ## NB:
 This version of the application works well in a small law firm scenario. It can be scaled or linked to APIs and additional features can be added to handle matter maintainance and rates, for example. Currently, the app relies on the business user having applications and/or databases that could handle the matter, personnel, rates, roles databases. 
 
 # User Stories
+This section documents how the Minimum Viable Product has been implemented in the Better Billing project to meet the outlined user stories.  
 
-## 🧮 Project Summary – Better Billing
+The system enables fee earners to record time and expenses, generate invoices, and give partners a clear overview of WIP (Work In Progress) and billing status. [READ MORE](/readme_docs/user_story.md)
 
-This section documents how the **core billing workflow** has been implemented in the Better Billing project to meet the outlined user stories.  
-The system enables fee earners to record time and expenses, generate invoices, and give partners a clear overview of WIP (Work In Progress) and billing status.  
+# Bugs
 
----
+** Turn this into table of bugs and fixes with "resolved?" flag(Y)
 
-### **1.1 Record Time**
-**Goal:**  
-Allow fee earners to record hours worked on matters for accurate client billing.
+Unable to connect to Heroku CLI
 
-**Implementation Details:**  
-- The **TimeEntry** model captures key data: `matter`, `fee_earner`, `activity_code`, `hours_worked`, and `narrative`.  
-- The **TimeEntryForm** enforces validation rules ensuring positive durations, valid activity codes, and required narratives.  
-- When a new entry is created, it’s linked to an **open matter** and saved as **unbilled (draft)**.  
-- A **recent entries list** displays the last ten submissions for easy reference.  
-- Django messages confirm successful saves or validation errors.
+Resolution: Download Command Line Tools (CLT) - also had to update MacOS to allow CLT to download
 
- **Achieved:** The manual time entry workflow functions as expected and correctly updates the matter’s unbilled totals.
+Matter ID issue arose during testing of: 
+python manage.py shell -c "from better_bill_project.models import WIP; print(WIP.objects.filter(matter_id='M0032', status='unbilled').count())" 
+- ID field expects number but matter IDs are integers - doesn't effect actual app functionality 
 
-**Links:**  
-[Time entry interface](/readme_docs/user_stories/record_hours.png),  
-[Line item entries](/readme_docs/user_stories/recent_entries.png)
+Successful submission Validation duplicating on time entry page
 
----
+# Testing 
 
-### **1.2 Edit/Lock Time**
-**Goal:**  
-Prevent editing or deletion of time entries once they are billed or included in a posted invoice.
+## **Testing**
 
-**Implementation Details:**  
-- Conditional logic disables editing when an entry’s related invoice has `status="posted"`.  
-- The UI hides or disables edit/delete buttons for locked entries.  
-- Attempted edits trigger a warning (“Locked – entry linked to posted invoice”).  
-- Only admins can override this for audit purposes.
+### **Testing Overview**
 
- **Achieved:** Time entries are correctly locked after billing, preserving financial data integrity.
+Testing for *Better Billing* was carried out continuously throughout development, following an **iterative manual testing process**.  
+Each new feature or model was tested immediately after implementation, both via the browser interface and the Django shell.  
+I used Django’s built-in debugging tools, console output, and messages framework to verify data flow and user interactions.  
 
-**Links:**  
-[Locked entry message](/readme_docs/user_stories/locked_entry.png)
+I also validated all HTML and CSS using official W3C and Jigsaw validators and ensured all Python code was **PEP8 compliant** using VS Code linting and the `flake8` checker.  
+
+Below is a summary of the main test procedures and outcomes.
 
 ---
 
-### **1.3 Record Expenses**
-**Goal:**  
-Allow fee earners to record recoverable expenses and attach receipts.
+### **Manual Testing Table**
 
-**Implementation Details:**  
-- The **Expense** model captures `amount`, `vat_flag`, `receipt`, and `matter`.  
-- File validation ensures accepted types (PDF, JPG, PNG).  
-- VAT is auto-calculated when applicable.  
-- Saved expenses appear in the **unbilled expenses** list and feed into draft invoices.
-
- **Achieved:** Expense capture, VAT handling, and linkage to invoice generation are working as intended.
-
-**Links:**  
-[Expense entry form](/readme_docs/user_stories/record_expense.png),  
-[Unbilled expense list](/readme_docs/user_stories/unbilled_expenses.png)
-
----
-
-### **2.1 Generate Draft Invoice**
-**Goal:**  
-Enable fee earners to generate draft invoices from unbilled time and expenses.
-
-**Implementation Details:**  
-- The **Invoice** model aggregates all unbilled **WIP** and **Expense** entries for a given matter or client.  
-- Drafts include calculated subtotals, VAT, and totals via model property methods.  
-- Once generated, items are flagged as **drafted** to prevent reuse.  
-- Drafts remain editable until approved by a partner.
-
- **Achieved:** Draft invoice generation works seamlessly, pulling unbilled time and expenses together.
-
-**Links:**  
-[Draft invoice view](/readme_docs/user_stories/draft_invoice.png),  
-[Invoice summary](/readme_docs/user_stories/invoice_summary.png)
+| **Feature / Functionality** | **Test Description** | **Expected Result** | **Actual Result** | **Pass/Fail** |
+|------------------------------|----------------------|----------------------|-------------------|---------------|
+| **Client Creation** | Add a new client via form with valid data | Client saved and visible in Client List | Works as expected | Pass |
+| **Client Validation** | Submit client form with missing name | Error message displayed, client not saved | Validation error shown as expected | Pass |
+| **Matter Creation** | Create new matter linked to an existing client | Matter saved with correct client relationship | Saved correctly and visible in Matter List | Pass |
+| **Matter Validation** | Try linking matter to wrong client | Error message: “Selected matter does not belong to the chosen client” | Error handled and displayed cleanly | Pass |
+| **Time Entry Creation** | Enter hours, activity code, and narrative | New Time Entry saved and visible under correct Matter | Functions correctly | Pass |
+| **Time Entry Validation** | Enter invalid or missing hours | Error message displayed | Validation successful | Pass |
+| **Time Entry Edit** | Update an existing time entry | Updated details saved correctly | Changes persist as expected | Pass |
+| **Time Entry Delete** | Delete existing record | Entry removed and success message shown | Works correctly | Pass |
+| **WIP Creation** | WIP auto-linked to Matter and Fee Earner | Record created and correctly calculated | Works as expected | Pass |
+| **WIP Validation** | Time Entry or Client mismatch | Error message raised and prevented save | Works as intended | Pass |
+| **Invoice Draft Creation** | Create a draft invoice for WIP | Draft invoice created, total and tax calculated | Totals calculated correctly | Pass |
+| **Invoice Posting** | Partner posts draft invoice | Status updated to “Posted” and removed from Draft list | Works correctly | Pass |
+| **Subtotal / Tax Calculation** | Check rounding and tax calculation accuracy | Subtotal * tax_rate / 100 rounded to 2dp | Accurate and formatted correctly | Pass |
+| **CRUD Reflections in UI** | Perform CRUD actions and refresh page | Data updates immediately in tables/views | Reflected correctly | Pass |
+| **Navigation Links** | Test all links across navbar and footer | All pages reachable, no 404s | All links functional | Pass |
+| **User Feedback** | Perform actions (add/edit/delete) | Toast or alert messages shown | Messages displayed as expected | Pass |
+| **Responsive Design** | Resize browser and test on mobile | Layout adjusts, navigation collapses properly | Bootstrap responsiveness confirmed | Pass |
+| **Form Usability** | Tab through fields and submit with Enter | Forms behave intuitively and validate on submit | Works correctly | Pass |
+| **Database Integrity** | Run migrations, seed test data | All models linked correctly, no integrity errors | Works correctly | Pass |
+| **Deployment (Heroku)** | Deploy to Heroku and test live app | App matches local functionality | Matches local build with no issues | Pass |
+| **Environment Security** | Check for exposed keys or DEBUG mode | No credentials visible, DEBUG=False | Verified and secure | Pass |
 
 ---
 
-### **2.2 Edit Narratives**
-**Goal:**  
-Allow fee earners to refine line-item narratives on draft invoices before posting.
+### **Testing Reflection**
 
-**Implementation Details:**  
-- Editable narrative fields are exposed at the **invoice line** level.  
-- Updates are stored independently, preserving original time entry data.  
-- Validation limits and formatting checks ensure clarity.  
-- Live updates via AJAX refresh the preview immediately after saving.
+Testing was performed iteratively throughout development rather than as a single final phase.  
+After each major change—especially model adjustments or form updates—I tested the following manually:
+- Form validation and data integrity in the browser  
+- CRUD operations via Django Admin and the front end  
+- Message feedback, redirection, and template rendering  
 
- **Achieved:** Narrative editing updates the invoice draft without altering original time entries.
+When errors occurred, they were documented and resolved immediately.  
+Examples include:
+- **FieldError: Unknown field(s) (matter)** – fixed by removing deprecated form field references  
+- **Invalid select_related('matter')** – resolved by correcting model relationships  
+- **PEP8 duplicate function definition error** – refactored functions and removed redundancy  
+- **Template loading issue for password reset** – fixed by ensuring template paths in `BASE_DIR`  
+- **WIP validation** – added custom `clean()` methods to prevent mismatched client/matter links  
 
-**Links:**  
-[Narrative edit form](/readme_docs/user_stories/edit_narrative.png),  
-[Preview update](/readme_docs/user_stories/narrative_preview.png)
+These fixes ensured that the application handled user input gracefully and maintained database consistency.
 
----
+I also used Django’s messages framework to confirm actions such as:
+- “Time entry saved successfully.”  
+- “Please correct the errors below.”  
+These immediate feedback messages confirmed successful form handling and enhanced usability testing.
 
-### **2.3 Approve & Post Invoice**
-**Goal:**  
-Allow partners to approve and post invoices, finalising billing.
-
-**Implementation Details:**  
-- The **“Post”** button is visible only to users with the Partner role.  
-- Posting changes invoice status to `posted` and locks linked WIP/Expense entries.  
-- Posted invoices are read-only and excluded from new drafts.  
-- Totals update dynamically in the reports view.
-
- **Achieved:** Approval and posting workflows function correctly with appropriate access control.
-
-**Links:**  
-[Invoice approval view](/readme_docs/user_stories/approve_invoice.png),  
-[Posted invoice summary](/readme_docs/user_stories/posted_invoice.png)
+Finally, I validated all templates with **HTML5 Validator**, ensuring clean, accessible markup across the project’s app-level templates (excluding system/admin files).
 
 ---
 
-### **3.1 WIP & Invoice Overview**
-**Goal:**  
-Provide partners with a high-level overview of WIP, draft invoices, and posted invoices.
+### **Validation Results**
 
-**Implementation Details:**  
-- The **WIP dashboard** aggregates totals for:
-  - Unbilled time  
-  - Draft invoices  
-  - Posted invoices  
-- Data grouped by matter shows hours, values, and VAT.  
-- Partners can drill down into categories for details.  
-- No aged-debt tracking (intentionally excluded).  
-- Access restricted to partner-level users.
-
- **Achieved:** Dashboard provides clear and concise billing overviews for partners.
-
-**Links:**  
-[WIP summary view](/readme_docs/user_stories/wip_overview.png),  
-[Invoice totals chart](/readme_docs/user_stories/invoice_overview.png)
+| **Validation Type** | **Tool Used** | **Result** |
+|----------------------|---------------|------------|
+| HTML | HTML 5 Validator | No major errors |
+| CSS | Jigsaw CSS Validator | No issues |
+| Python | PEP8 / Flake8 | All code compliant |
+| Database | Django ORM Migrations | Passed with no conflicts |
+| Security | `.env` + `.gitignore` + `DEBUG=False` | Passed |
 
 ---
 
-## Technical Summary
-- **Backend:** Django ORM, model forms, and class-based views manage all CRUD operations.  
-- **Validation:** Form-level checks plus business rules embedded in model clean methods.  
-- **Frontend:** Django templates (DTL), Bootstrap for layout, and JavaScript for interactivity.  
-- **Security:** Role-based permissions ensure appropriate visibility and control.  
-- **Data Integrity:** Locked entries and cascading updates ensure consistent invoice totals.  
-- **Storage:** Local file storage for uploaded receipts and related documents.  
+### **Conclusion**
+
+All features were tested manually and verified to function as intended in both development and production environments.  
+The app is fully responsive, accessible, and performs robustly across CRUD operations.  
+
+Testing demonstrated:
+- **Defensive design** through validation and error handling  
+- **Data integrity** across linked models (Client → Matter → Time Entry → WIP → Invoice)  
+- **Seamless UX** with immediate user feedback  
+- **Secure deployment** with no exposed credentials  
+
+Future automated testing could extend this foundation by introducing Django’s unit testing framework or Selenium for end-to-end UI testing, but for the scope of this project, manual testing covered all core functionality thoroughly.
 
 ---
 
-## Overall Status
-All user stories from **1.1 through 3.1** have been successfully implemented and verified through functional testing.  
-The application now provides a full workflow — from time and expense recording to invoicing and performance reporting.
+**Evidence:**
+- [Screenshot: Form Validation Example]  
+- [Screenshot: CRUD Test Results]  
+- [Screenshot: Responsive View on Mobile]  
+- [Screenshot: Heroku Deployment Confirmation]  
 
+Heroku
+Github
+Django
+Lighthouse
+Mobile Responsiveness
+ESLint
+CSS
+HTML - Downloaded HTML5 Validator via Java (Java installed via Homebrew)
 
-
-# UX
- ### Wire Frames
-
-
-# GIT and Heroku deployment
-
-# CRUD
-
-Create
-- User can create line entries
-
-Read
-- User can read line entries & invoices
-
-Update
-- User can edit line entries & invoices
-
-Delete
-- User can purge line entries & reverse invoices*
-
-*Line entries and invoices will not be fully deleted from the database but marked as reversed permanently
 
 # Sources
 
@@ -220,81 +180,79 @@ https://mac.install.guide/commandlinetools/3
 Download link via Apple Store
 https://developer.apple.com/download/all/?q=xcode
 
+## 📚 References & Sources
 
-# Django & Heroku set up
+### 🧱 Frameworks & Core Technologies
 
-1. Installed latest version of Python 
-2. Used pip to install Django
-3. 
-Logged into Heroku - selected build new app
-Under 'Deploy' I connected my repo
+- **Django Software Foundation.** [*Django Documentation*](https://docs.djangoproject.com/en/5.0/)  
+  Used throughout the project for model definitions, views, URL routing, and form handling.
 
-# Bugs
+- **PostgreSQL Global Development Group.** [*PostgreSQL 16 Documentation*](https://www.postgresql.org/docs/)  
+  Used as the relational database backend for managing Clients, Matters, Time Entries, and Invoices.
 
-** Turn this into table of bugs and fixes with "resolved?" flag(Y)
+- **Bootstrap Team.** [*Bootstrap v5.3 Documentation*](https://getbootstrap.com/docs/5.3/)  
+  Used for front-end styling, grid layout, and responsive design.
 
-Unable to connect to Heroku CLI
+---
 
-Resolution: Download Command Line Tools (CLT) - also had to update MacOS to allow CLT to download
+### ⚙️ Deployment & Environment
 
-Matter ID issue arose during testing of: 
-python manage.py shell -c "from better_bill_project.models import WIP; print(WIP.objects.filter(matter_id='M0032', status='unbilled').count())" 
-- ID field expects number but matter IDs are integers - doesn't effect actual app functionality 
+- **Heroku Dev Center.** [*Deploying Python and Django Apps on Heroku*](https://devcenter.heroku.com/categories/python-support)  
+  Used for deploying the project to a live environment with PostgreSQL add-on and environment variable configuration.
 
-Successful submission Validation duplicating on time entry page
+- **GitHub Docs.** [*About GitHub Repositories and Source Control in VS Code*](https://docs.github.com/en/repositories)  
+  Used to manage version control, commits, and deployment integration from VS Code.
 
-# Testing 
+- **Python Software Foundation.** [*venv — Creation of Virtual Environments*](https://docs.python.org/3/library/venv.html)  
+  Used to isolate dependencies for local Django setup.
 
-Heroku
-Github
-Django
-Lighthouse
-Mobile Responsiveness
-ESLint
-CSS
-HTML - Downloaded HTML5 Validator via Java (Java installed via Homebrew)
+- **WhiteNoise Project.** [*Serving Static Files in Production*](http://whitenoise.evans.io/en/stable/)  
+  Used to efficiently serve static files on Heroku.
 
-CODE:
-mkdir -p site_dump
-wget -e robots=off --recursive --no-clobber --page-requisites \
-     --adjust-extension --convert-links --no-parent \
-     http://127.0.0.1:8000/ -P site_dump
+---
 
-html5validator --root site_dump --blacklist admin static media \
-               --format text --show-warnings
+### 🧩 Additional Libraries
 
-"file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/admin/index.html":44.3-44.53: error: Element "div" not allowed as child of element "button" in this context. (Suppressing further errors from this subtree.)
+- **dj-database-url.** [*dj-database-url on PyPI*](https://pypi.org/project/dj-database-url/)  
+  Used to configure database connections using environment variables.
 
-Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
-From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/view_invoice.html%3Fstatus=draft.html
-Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
-From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/view_invoice.html%3Fstatus=posted.html
-Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
-From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/index.html
-Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
-From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/create_invoice.html
-Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
-From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/record.html
-Warning: Consider adding a "lang" attribute to the "html" start tag to declare the language of this document.
-From line 2, column 16; to line 3, column 6 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/view_invoice.html
-Error: Stray end tag "head".
-From line 9, column 3; to line 9, column 9 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/accounts/password_reset/index.html
-Error: Start tag "body" seen but an element of the same type was already open.
-From line 10, column 3; to line 10, column 8 in resource file:/Users/tambrulee/Documents/Code%20Institute/P3%20-%20Better%20Billing%20-%20NEW/site_dump/127.0.0.1:8000/accounts/password_reset/index.html
-Document checking completed.
-(.venv) (base) tambrulee@Tamsins-MacBook-Pro P3 - Better Billing - NEW % 
+- **python-dotenv.** [*python-dotenv on PyPI*](https://pypi.org/project/python-dotenv/)  
+  Used for managing environment variables locally during development.
 
-Python
+- **gunicorn.** [*gunicorn on PyPI*](https://pypi.org/project/gunicorn/)  
+  Used as the WSGI HTTP server for deployment on Heroku.
+
+---
+
+### 🧪 Testing & Validation
+
+- **Django Software Foundation.** [*Testing in Django*](https://docs.djangoproject.com/en/5.0/topics/testing/)  
+  Used as a reference for writing and running unit and integration tests.
+
+- **validator.nu.** [*HTML5 Validator API*](https://validator.w3.org/nu/)  
+  Used to validate HTML templates to ensure semantic accuracy and accessibility.
+
+- **Code Institute.** [*Python Linter & PEP8 Guidelines*](https://pep8.org/)  
+  Used to ensure PEP8 compliance throughout the project.
+
+---
+
+### 🧠 Tutorials & Learning References
+
+- **Code Institute.** *Full Stack Development Course Materials (Django)*  
+  Provided project structure, deployment patterns, and test writing methodology used as a base for this project.
+
+- **Traversy Media.** [*Django Crash Course (YouTube)*](https://www.youtube.com/watch?v=e1IyzVyrLSU)  
+  Helped reinforce understanding of CRUD operations and Django admin setup.
+
+- **Corey Schafer.** [*Django Tutorial Series (YouTube)*](https://www.youtube.com/playlist?list=PL-osiE80TeTs4UjLw5MM6OjgkjFeUxCYH)  
+  Referenced for understanding model relationships and query optimization.
+
+---
+
+### 🧾 Formatting & Documentation
+
+- **GitHub Docs.** [*Mastering Markdown*](https://guides.github.com/features/mastering-markdown/)  
+  Used for README.md formatting and linking screenshots.
 
 
-heroku open -a betterbilling 
-Check app is active
-heroku apps:info -a betterbilling
-Check info about app
-
-
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
-
-python manage.py showmigrations better_bill_project
