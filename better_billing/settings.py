@@ -15,8 +15,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
