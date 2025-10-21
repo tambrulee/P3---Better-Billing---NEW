@@ -19,8 +19,11 @@ from playwright.sync_api import sync_playwright
 
 
 # -- Views --
-
+@login_required
 def index(request):
+    """ 
+Basic Views for Better Billing Project 
+    """
     # Unbilled WIP
     wip_qs = (
         WIP.objects
