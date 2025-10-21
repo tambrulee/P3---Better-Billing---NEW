@@ -1,7 +1,6 @@
 from decimal import Decimal
 from django.utils import timezone
 from django.core.paginator import Paginator
-import pdfkit
 from django.utils.dateparse import parse_date
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
