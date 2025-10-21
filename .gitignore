@@ -24,3 +24,7 @@ db.sqlite3
 .env.*
 *.env
 !.env.example
+
+# Project files
+pyproject.toml
+site_dump/
