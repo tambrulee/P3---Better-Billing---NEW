@@ -1,9 +1,11 @@
+import os
 from decimal import Decimal
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.utils.dateparse import parse_date
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
+from io import BytesIO
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseServerError
 from django.contrib import messages
@@ -15,6 +17,10 @@ from .models import WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
 from django.db import transaction
 from django.contrib.auth.decorators import login_required, permission_required
 from django.views.decorators.http import require_POST
+from django.contrib.staticfiles import finders
+from urllib.parse import urlparse
+from xhtml2pdf import pisa
+from .models import Invoice
 
 # -- Views --
 @login_required
@@ -520,8 +526,30 @@ def invoice_detail(request, pk):
         "status": status,
     })
 
+# PDF Viewer
 
-# PDF generation view 
+def _xhtml2pdf_link_callback(uri, rel):
+    """
+    Resolve static/media URIs for xhtml2pdf.
+    Supports:
+      - /static/... (Django staticfiles)
+      - /media/...  (user uploads)
+      - absolute http(s) URLs (leave as-is; xhtml2pdf can fetch some)
+    """
+    parsed = urlparse(uri)
+    if parsed.scheme in ("http", "https"):
+        return uri  # allow remote if needed (or block if you prefer)
+    if uri.startswith(settings.STATIC_URL):
+        path = uri.replace(settings.STATIC_URL, "", 1)
+        abs_path = finders.find(path)  # in collected static or app dirs
+        if abs_path:
+            return abs_path
+    if uri.startswith(settings.MEDIA_URL):
+        path = uri.replace(settings.MEDIA_URL, "", 1)
+        return os.path.join(settings.MEDIA_ROOT, path)
+    # fallback: return as-is; pisa will try
+    return uri
+
 @login_required
 def invoice_pdf(request, pk):
     inv = get_object_or_404(
@@ -536,50 +564,34 @@ def invoice_pdf(request, pk):
     total    = inv.ledger.total    if getattr(inv, "ledger", None) else inv.total
     status   = inv.ledger.status   if getattr(inv, "ledger", None) else "draft"
 
-    html = render_to_string("better_bill_project/invoice_pdf.html", {
-        "inv": inv, "subtotal": subtotal, "tax": tax, "total": total, "status": status,
-    }, request=request)
-
-    # inject a <base> so relative {% static %} / URLs resolve for Playwright
-    base_href = request.build_absolute_uri("/")
-    html_with_base = html.replace(
-        "<head>",
-        f'<head><base href="{base_href}">',
-        1  # only first occurrence
+    html = render_to_string(
+        "better_bill_project/invoice_pdf.html",
+        {"inv": inv, "subtotal": subtotal, "tax": tax, "total": total, "status": status},
+        request=request,
     )
 
-    # Feature flag: enable Playwright only when available/desired
-    if not getattr(settings, "PLAYWRIGHT_ENABLED", False):
-        return HttpResponseServerError(
-            "PDF generation is disabled on this server (PLAYWRIGHT_ENABLED=False)."
-        )
+    # ensure relative links work (static/css/images)
+    base_href = request.build_absolute_uri("/")
+    html = html.replace("<head>", f'<head><base href="{base_href}">', 1)
 
-    # Lazy import so app boots even if Playwright isn't installed
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        return HttpResponseServerError(
-            "PDF engine not installed (playwright). Ask admin to enable it."
-        )
+    # Render HTML -> PDF
+    pdf_io = BytesIO()
+    result = pisa.CreatePDF(
+        src=html,
+        dest=pdf_io,
+        encoding="utf-8",
+        link_callback=_xhtml2pdf_link_callback,
+    )
+    if result.err:
 
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(args=["--no-sandbox"])
-            page = browser.new_page()
-            page.set_content(html_with_base, wait_until="load")
-            pdf_bytes = page.pdf(
-                format="A4",
-                print_background=True,
-                margin={"top": "18mm", "right": "15mm", "bottom": "18mm", "left": "15mm"},
-            )
-            browser.close()
-    except Exception as e:
-        # Optional: log the exception with Sentry/console
-        return HttpResponseServerError(f"PDF generation failed: {e}")
+        return HttpResponseServerError("PDF render failed.")
 
+    pdf_bytes = pdf_io.getvalue()
     resp = HttpResponse(pdf_bytes, content_type="application/pdf")
     resp["Content-Disposition"] = f'inline; filename="Invoice-{inv.number}.pdf"'
     return resp
+
+# Custom 404 page
 
 def custom_404(request, exception):
     return render(
