@@ -1,10 +1,12 @@
-html{ outline: 6px dashed hotpink !important; }
-
 *, body{
     background-color: whitesmoke;
     text-align: center;
 }
 
+.btn-primary{
+    background-color: rgb(128, 0, 109);
+    border: olivedrab;
+}
 
 /* === Brand palette (tweak these 3 lines to taste) === */
 :root{
@@ -19,7 +21,7 @@ html{ outline: 6px dashed hotpink !important; }
   --brand-ring: hsl(var(--brand-h) var(--brand-s) var(--brand-l) / .45);
 }
 
-/* Set Bootstrap’s primary feel to brand palette*/
+/* Optional: set Bootstrap’s primary feel to your brand */
 .navbar, .btn-primary, .text-primary { --bs-primary: var(--brand); }
 
 /* Header base */
