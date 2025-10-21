@@ -127,6 +127,7 @@ class PersonnelAdmin(ImportExportModelAdmin):
     search_fields = ("initials", "name", "role__role")  # note the double underscore
 
     def rate_display(self, obj):
+        """ Display the rate from the related Role model. """
         return obj.role.rate
     rate_display.short_description = "Rate"
     rate_display.admin_order_field = "role__rate"

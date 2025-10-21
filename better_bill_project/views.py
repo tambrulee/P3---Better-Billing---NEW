@@ -83,6 +83,7 @@ Basic Views for Better Billing Project
 # Time Entry Form
 @login_required
 def record_time(request):
+    """ View for recording time entries and listing recent entries. """
     # Who can see everything? (Partners/Admins – reusing your post_invoice perm)
     is_partner = request.user.has_perm(
         "better_bill_project.post_invoice") or request.user.is_superuser
@@ -168,6 +169,8 @@ def record_time(request):
 @login_required
 @require_POST
 def delete_time_entry(request, pk):
+    """ Delete a time entry if unbilled and permitted.
+    """
     # Reuse your existing permission rule
     is_partner = request.user.has_perm(
         "better_bill_project.post_invoice") or request.user.is_superuser
@@ -210,6 +213,7 @@ def _back_to_record_time(request):
 
 # --- AJAX: returns option list for matters by client (value = matter_number)
 def ajax_matter_options(request):
+    """ Given a client ID in GET, return HTML options for that client's open matters."""
     client_id = request.GET.get("client")
     matters = Matter.objects.filter(
         client_id=client_id, closed_at__isnull=True).order_by(
@@ -234,6 +238,8 @@ def _next_invoice_number():
     return f"{n + 1:06d}"
 
 def create_invoice(request):
+    """ Create an invoice from selected unbilled WIP items.
+    """
     readonly_number = _next_invoice_number()
     readonly_date = timezone.localdate()
     readonly_tax = Decimal("20.00")  # percent
@@ -330,6 +336,8 @@ def create_invoice(request):
 
 # View Invoice
 def view_invoice(request):
+    """ List and filter invoices with pagination and totals.
+    """
     # --- Filters from GET ---
     number = (request.GET.get("number") or "").strip()
     client = (request.GET.get("client") or "").strip()
@@ -500,6 +508,7 @@ def post_invoice_view(request):
 # Invoice Detail View
 @login_required
 def invoice_detail(request, pk):
+    """ View detailed invoice information."""
     inv = get_object_or_404(
         Invoice.objects
         .select_related("client", "matter", "ledger")
@@ -547,11 +556,11 @@ def _xhtml2pdf_link_callback(uri, rel):
     if uri.startswith(settings.MEDIA_URL):
         path = uri.replace(settings.MEDIA_URL, "", 1)
         return os.path.join(settings.MEDIA_ROOT, path)
-    # fallback: return as-is; pisa will try
     return uri
 
 @login_required
 def invoice_pdf(request, pk):
+    """ Render an invoice as PDF and return as HTTP response."""
     inv = get_object_or_404(
         Invoice.objects
         .select_related("client", "matter", "ledger")
@@ -594,5 +603,6 @@ def invoice_pdf(request, pk):
 # Custom 404 page
 
 def custom_404(request, exception):
+    """ Custom 404 error page view."""
     return render(
         request, "errors/404.html", {"marker": "USING CUSTOM 404"}, status=404)

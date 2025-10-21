@@ -5,7 +5,9 @@ from .models import TimeEntry, WIP
 
 @receiver(post_save, sender=TimeEntry)
 def create_or_sync_wip(sender, instance: TimeEntry, created, **kwargs):
+    """Create or sync WIP entry when a TimeEntry is created or updated."""
     def _sync():
+        """Sync WIP entry with TimeEntry instance."""
         if created:
             # Idempotent create
             WIP.objects.get_or_create(
