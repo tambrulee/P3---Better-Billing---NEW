@@ -1,3 +1,4 @@
+// Dynamic loading of matter options based on selected client
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.appUrls?.ajaxMatterOptions) {
     console.error('ajaxMatterOptions URL not provided via window.appUrls');
@@ -10,11 +11,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (!clientSelect || !matterSelect) return;
 
+   /** 
+    * Set matter select to loading state
+   */
   function setLoading() {
     matterSelect.disabled = true;
     matterSelect.innerHTML = '<option value="">Loading matters…</option>';
   }
 
+  /** 
+   * Set matter select to empty state
+  */
   function setEmpty() {
     matterSelect.disabled = false;
     matterSelect.innerHTML = '<option value="">— Select matter —</option>';

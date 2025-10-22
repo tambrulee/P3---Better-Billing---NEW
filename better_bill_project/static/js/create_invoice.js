@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentClient = params.get('client') || '';
   const currentMatter = params.get('matter') || '';
 
+   /** 
+    * Safely select option in a select element
+   */
   function safeSelectOption(selectEl, value) {
     if (!value) return;
     try {
@@ -26,7 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
  
-   
+   /** 
+    *   Update URL query parameters without page reload
+    * */ 
   function setURLWithoutReload(clientVal, matterVal) {
     const qs = new URLSearchParams();
     if (clientVal) qs.set('client', clientVal);
@@ -35,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState(null, '', newUrl);
   }
 
+   /** 
+    * Load matters for a given client ID
+   */
   async function loadMatters(cid, selectValue = '') {
     if (!cid) {
       matter.innerHTML = '<option value="">— Select matter —</option>';

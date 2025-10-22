@@ -282,7 +282,7 @@ class InvoiceLine(models.Model):
 
 
 class Ledger(models.Model):
-    STATUS = [("draft", "Draft"), ("posted", "Posted")]
+    STATUS = [("draft", "Draft"), ("posted", "Posted"), ("paid", "Paid"),]
     invoice     = models.OneToOneField("Invoice", on_delete=models.CASCADE,
                                        related_name="ledger")
     client      = models.ForeignKey("Client",
@@ -297,6 +297,8 @@ class Ledger(models.Model):
     total       = models.DecimalField(max_digits=12, decimal_places=2)
     status      = models.CharField(max_length=10, choices=STATUS, default="draft")
     created_at  = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+
 
     class Meta:
         ordering = ["-created_at"]

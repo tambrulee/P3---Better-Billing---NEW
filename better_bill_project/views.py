@@ -600,6 +600,14 @@ def invoice_pdf(request, pk):
     resp["Content-Disposition"] = f'inline; filename="Invoice-{inv.number}.pdf"'
     return resp
 
+def mark_paid(self, when=None):
+    self.status = self.Status.PAID
+    if hasattr(self, "paid_at"):
+        from django.utils import timezone
+        self.paid_at = when or timezone.now()
+    self.save(update_fields=["status", "paid_at"] if hasattr(self, "paid_at") else ["status"])
+
+
 # Custom 404 page
 
 def custom_404(request, exception):
