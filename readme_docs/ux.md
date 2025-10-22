@@ -8,6 +8,9 @@ The *Better Billing* project was developed with a strong emphasis on user experi
 
 The project followed recognised UX principles such as clarity, consistency, feedback, and accessibility. Each interface component was designed to reduce cognitive load and provide a seamless workflow for users entering, reviewing, and managing billing data. Consistent button placement, typography, and spacing were achieved through the use of the Bootstrap framework, which ensured design harmony across all pages.
 
+**Wire Frames**
+[View Wire Frames](/readme_docs/p3_wireframes.pdf)
+
 **Use of Bootstrap and Custom CSS**
 
 Bootstrap provided a strong foundation for responsive design, ensuring compatibility across desktop, tablet, and mobile devices. Custom CSS was added to enhance branding and tailor the visual hierarchy—using colour accents, card components, and subtle shadows to distinguish sections and guide user attention. The combination of Bootstrap’s grid system and custom styling promoted both efficiency and aesthetic appeal.
@@ -19,6 +22,13 @@ The interface was structured around a clear and predictable navigation model. Us
 **Feedback and Validation**
 
 User feedback mechanisms were built into key workflows. For example, when invoices are created or time entries are submitted, Bootstrap-styled alert messages confirm the success or failure of an action. Validation errors are displayed inline, using clear language and accessible colours to ensure users can correct mistakes quickly. This reinforces the UX principle of *visibility of system status*.
+
+Examples of user validation messages:
+
+- [Invoice creation successful](/readme_docs/validation/create_inv.png)
+- [Time entry successful](/readme_docs/validation/time_entry.png)
+- [WIP not available for selection](/readme_docs/validation/create_inv.png)
+
 
 **Accessibility and Readability**
 

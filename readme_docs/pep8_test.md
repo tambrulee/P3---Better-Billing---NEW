@@ -8,21 +8,16 @@
    SOLUTION: Removed duplicate & unused imports
 
 4. ISSUE: E401 [*] Multiple imports on one line
-   --> better_billing/lint_probe.py:1:1
    SOLUTION: Split imports
 
 5. ISSUE: E702 Multiple statements on one line (semicolon)
-   --> better_billing/settings.py:12:31
    SOLUTION: Correct syntax
 
 6. ISSUE: E402 Module level import not at top of file
-   --> better_billing/settings.py:13:1
-   SOLUTION: Move OS and dj_database to top
+   SOLUTION: Move OS and dj_database to top of settings.py
 
 7. ISSUE: W293 [*] Blank line contains whitespace
-   --> better_billing/settings.py:45:1
    SOLUTION: Remove whitespaces |
 
 8. ISSUE: W292 [*] No newline at end of file
-   --> better_billing/urls.py:30:52
    SOLUTION : Add trailing newline

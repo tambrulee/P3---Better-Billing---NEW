@@ -69,7 +69,7 @@ Finally, I validated all templates with **HTML5 Validator**, ensuring clean, acc
 |----------------------|---------------|------------|
 | HTML | HTML 5 Validator | No major errors |
 | CSS | Jigsaw CSS Validator | No issues |
-| Python | PEP8 / Flake8 | All code compliant |
+| Python | PEP8 / Flake8 | [All code compliant]() - [See all errors and fixes here](/readme_docs/testing/ruff_check.png) |
 | Database | Django ORM Migrations | Passed with no conflicts |
 | Security | `.env` + `.gitignore` + `DEBUG=False` | Passed |
 
@@ -96,11 +96,4 @@ Future automated testing could extend this foundation by introducing Django’s 
 - [Screenshot: Responsive View on Mobile]  
 - [Screenshot: Heroku Deployment Confirmation]  
 
-Heroku
-Github
-Django
-Lighthouse
-Mobile Responsiveness
-ESLint
-CSS
 HTML - Downloaded HTML5 Validator via Java (Java installed via Homebrew)

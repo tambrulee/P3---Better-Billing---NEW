@@ -2,8 +2,6 @@
 
 ## 📑 Project Documentation
 
-1. ### [About](/readme_docs/about.md)
-
 ## What is Better Billing?
 
 **Better Billing** is a full-stack Django web application designed to streamline legal billing processes.  
@@ -12,8 +10,6 @@ It allows **Fee Earners** to record and manage time entries, raise **draft invoi
 The project was developed using **Django**, **PostgreSQL**, and **Bootstrap**, and deployed securely to **Heroku** with environment variables managed via `.env` for secret keys and database credentials.
 
 The app’s goal was to make time recording and billing more intuitive and transparent for fee earners in a law firm environment. It models real-world relationships between **Clients**, **Matters**, **Time Entries**, **WIP**, and **Invoices**, offering complete CRUD functionality across all core data entities.
-
-
 
 ## How Better Billing works 
 Lawyers (fee earners) input their time worked with a description of the work performed submitted against a client, matter and activiy code. The administrator, in this scenario the Partners, can then pick up and review the time entries then push them to an randomly generated invoice number. 
@@ -38,7 +34,7 @@ I also followed **PEP8** conventions throughout my Python code, using descriptiv
 ## NB:
 This version of the application works well in a small law firm scenario. It can be scaled or linked to APIs and additional features can be added to handle matter maintainance and rates, for example. Currently, the app relies on the business user having applications and/or databases that could handle the matter, personnel, rates, roles databases. 
 
-2. ### Design, Development & Implementation
+### Design, Development & Implementation
 
 - #### [User Stories](/readme_docs/user_story.md)
 
@@ -48,22 +44,22 @@ This version of the application works well in a small law firm scenario. It can 
 
 ### Data Model Management
 
-#### [Database Models & Schema](/readme_docs/db_schema.md)
+- #### [Database Models & Schema](/readme_docs/db_schema.md)
 
 ### Queries & Data Manipulation
 
-#### [CRUD](/readme_docs/crud.md)
+- #### [CRUD](/readme_docs/crud.md)
 
 ### Deployment
 
-#### [Heroku](/readme_docs/heroku.md)
+- #### [Heroku](/readme_docs/heroku.md)
 
 ### Security
 
-#### [Repository Management](/readme_docs/git.md)
+- #### [Repository Management](/readme_docs/git.md)
 
 ### Issues & Fixes
-#### [Bugs](/readme_docs/bugs.md)
+- #### [Bugs](/readme_docs/bugs.md)
 
 # Sources
 
