@@ -253,6 +253,12 @@
 
 <!-- Scripts (pulls in bootstrap)-->
 {% block body_end %}
+<!-- Pull in matter dropdown selection -->
+  <script>
+  window.appUrls = Object.assign({}, window.appUrls, {
+    ajaxMatterOptions: "{% url 'ajax-matter-options' %}"
+  });
+</script>
 <!-- Custom JS -->
     <script src="{% static 'js/record.js' %}" defer></script>
 {% endblock %}

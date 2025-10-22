@@ -1,3 +1,8 @@
+const ajaxUrl = window.appUrls.ajaxMatterOptions; // e.g. "/ajax/matter-options/"
+fetch(`${ajaxUrl}?client=${clientId}`)
+  .then(r => r.json())
+  .then(data => { /* ... */ });
+
 // Narrow Matter dropdown when Client changes
   document.addEventListener('DOMContentLoaded', function() {
     const client = document.getElementById('id_ledger_client');

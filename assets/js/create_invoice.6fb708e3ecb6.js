@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Guard if the template script wasn’t included yet
   if (!window.appUrls || !window.appUrls.ajaxMatterOptions) {
     console.error('ajaxMatterOptions URL not provided via window.appUrls');
     return;
@@ -20,13 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const opt = selectEl.querySelector(`option[value="${CSS.escape(value)}"]`);
       if (opt) opt.selected = true;
     } catch {
+      // CSS.escape may not exist in very old browsers; ignore gracefully
       const opts = [...selectEl.options];
       const found = opts.find(o => o.value === value);
       if (found) found.selected = true;
     }
   }
- 
-   
+
   function setURLWithoutReload(clientVal, matterVal) {
     const qs = new URLSearchParams();
     if (clientVal) qs.set('client', clientVal);
@@ -63,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Initial populate (supports preselected client/matter via querystring)
   const initialClient = client.value || currentClient;
   if (initialClient) {
     loadMatters(initialClient, currentMatter);

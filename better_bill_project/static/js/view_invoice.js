@@ -1,4 +1,3 @@
-
 // Narrow Matter dropdown when Client changes
   document.addEventListener('DOMContentLoaded', function() {
     const client = document.getElementById('id_ledger_client');

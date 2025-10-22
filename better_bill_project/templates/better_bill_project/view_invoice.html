@@ -139,5 +139,13 @@
 <!-- Scripts (pulls in bootstrap)-->
 {% block body_end %}
 <!-- Custom JS -->
+  <script>
+  window.appUrls = {
+    ajaxMatterOptions: "{% url 'ajax-matter-options' %}"
+  };
+</script>
   <script src="{% static 'js/view_invoice.js' %}" defer></script>
+
+
+
 {% endblock %}

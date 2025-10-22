@@ -118,6 +118,12 @@
 
 <!-- Scripts (pulls in bootstrap)-->
 {% block body_end %}
+<!-- Pull in matter dropdown selection -->
+  <script>
+  window.appUrls = {
+    ajaxMatterOptions: "{% url 'ajax-matter-options' %}"
+  };
+</script>
 <!-- Custom JS -->
   <script src="{% static 'js/create_invoice.js' %}" defer></script>
 {% endblock %}
