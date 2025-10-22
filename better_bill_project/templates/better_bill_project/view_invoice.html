@@ -2,7 +2,7 @@
 {% load static %}
 {# templates/view_invoice.html #}
 
-<!-- Page Title -->
+<!-- Doc Title -->
 {% block title %}Home{% endblock %}
 
 <!-- Main Section -->
@@ -138,27 +138,6 @@
 
 <!-- Scripts (pulls in bootstrap)-->
 {% block body_end %}
-<script>
-  // Optional: narrow Matter dropdown when Client changes
-  document.addEventListener('DOMContentLoaded', function() {
-    const client = document.getElementById('id_ledger_client');
-    const matter = document.getElementById('id_ledger_matter');
-    const url = "{% url 'ajax-matter-options' %}";
-    async function loadMatters(cid){
-      const r = await fetch(`${url}?client=${cid}`, {headers:{'X-Requested-With':'XMLHttpRequest'}});
-      matter.innerHTML = await r.text();
-      // Preserve selected value if it exists in new list
-      const current = "{{ filters.matter }}";
-      if (current) { Array.from(matter.options).forEach(o => { if (o.value === current) o.selected = true; }); }
-    }
-    if (client) {
-      client.addEventListener('change', e => {
-        const cid = e.target.value;
-        if (cid) loadMatters(cid);
-        else matter.innerHTML = '<option value="">— Any —</option>';
-      });
-      if (client.value) loadMatters(client.value);
-    }
-  });
-</script>
+<!-- Custom JS -->
+  <script src="{% static 'js/view_invoice.js' %}" defer></script>
 {% endblock %}
