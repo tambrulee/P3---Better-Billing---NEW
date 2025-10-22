@@ -183,34 +183,34 @@ class WIP(models.Model):
         ordering = ["-created_at"]
 
 
-def clean(self):
-    super().clean()
+    def clean(self):
+        super().clean()
 
-    errors = {}
+        errors = {}
 
-    cid = self.client_id
-    mid = self.matter_id
+        cid = self.client_id
+        mid = self.matter_id
 
-    # Matter ↔ client consistency
-    if mid and cid and self.matter.client_id != cid:
-        errors["matter"] = (
-            "Selected matter does not belong to the chosen client."
-        )
-
-    # Time entry consistency
-    te = self.time_entry if self.time_entry_id else None
-    if te:
-        if te.matter_id != mid:
-            errors["time_entry"] = (
-                "Time entry's matter must match this WIP's matter."
-            )
-        if te.client_id != cid:
-            errors["client"] = (
-                "Time entry's client must match this WIP's client."
+        # Matter ↔ client consistency
+        if mid and cid and self.matter.client_id != cid:
+            errors["matter"] = (
+                "Selected matter does not belong to the chosen client."
             )
 
-    if errors:
-        raise ValidationError(errors)
+        # Time entry consistency
+        te = self.time_entry if self.time_entry_id else None
+        if te:
+            if te.matter_id != mid:
+                errors["time_entry"] = (
+                    "Time entry's matter must match this WIP's matter."
+                )
+            if te.client_id != cid:
+                errors["client"] = (
+                    "Time entry's client must match this WIP's client."
+                )
+
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         if self._state.adding and self.time_entry_id is None:
