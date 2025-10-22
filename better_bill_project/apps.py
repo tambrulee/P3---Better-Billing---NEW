@@ -5,4 +5,4 @@ class BetterBillProjectConfig(AppConfig):
     name = "better_bill_project"
 
     def ready(self):
-        from . import signals  # noqa: F401  <- important
+        from . import signals  # noqa: F401  <- important # pyright: ignore[reportUnusedImport]
