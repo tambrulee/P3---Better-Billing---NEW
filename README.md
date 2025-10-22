@@ -1,7 +1,19 @@
 # Welcome to the Better Billing Project
 
+## 📑 Project Documentation
+
+1. ### [About](/readme_docs/about.md)
+
 ## What is Better Billing?
-Better Billing a demo app which is built for Legal Billing. The app focuses on the time entry, billing and invoicing side of legal billing and works off a simple database framework. 
+
+**Better Billing** is a full-stack Django web application designed to streamline legal billing processes.  
+
+It allows **Fee Earners** to record and manage time entries, raise **draft invoices**, and monitor **work in progress (WIP)**, while **Partners** can post final invoices.  
+The project was developed using **Django**, **PostgreSQL**, and **Bootstrap**, and deployed securely to **Heroku** with environment variables managed via `.env` for secret keys and database credentials.
+
+The app’s goal was to make time recording and billing more intuitive and transparent for fee earners in a law firm environment. It models real-world relationships between **Clients**, **Matters**, **Time Entries**, **WIP**, and **Invoices**, offering complete CRUD functionality across all core data entities.
+
+
 
 ## How Better Billing works 
 Lawyers (fee earners) input their time worked with a description of the work performed submitted against a client, matter and activiy code. The administrator, in this scenario the Partners, can then pick up and review the time entries then push them to an randomly generated invoice number. 
@@ -9,9 +21,15 @@ Lawyers (fee earners) input their time worked with a description of the work per
 The user interactions create data that is pushed into the database via the Record Time interface, data is then fed through to WIP and eventually onto the Invoice/Ledger tables. In line with CRUD principles the user can create, read, update and entries based on permissions. 
 
 ## Dependencies
-The app relies on Django & Python alongside various imports and supporting packages to manage AJAX, SQL queries, date/time widgets, authentication, validation errors and messages. 
+I designed the front end with **Bootstrap** to ensure full responsiveness and consistency across screen sizes. Accessibility guidelines were followed by using semantic HTML, ARIA labels, and high-contrast colour combinations. The UX was intentionally simple and linear, reducing friction when entering time or generating invoices.
 
-HTML5 is used in conjunction with the Django template format. The base template holds all the HTML document syntax alongside the load static command to globally apply the favicons, custom CSS3, Bootstrap CSS and Javascript.
+For the back end, I built a **Django project** with clearly structured apps, models, and views.  
+I implemented custom HTML templates that respond dynamically to user actions, such as form submissions and validation errors, using Django’s template logic and conditional rendering.  
+
+Data is persisted through PostgreSQL, and user interactions—like saving a Time Entry or creating an Invoice—trigger database updates and instant feedback via Django’s **messages framework**.  
+This provides users with immediate confirmation of actions (e.g., “Time entry saved successfully.”).
+
+I also followed **PEP8** conventions throughout my Python code, using descriptive variable names, consistent indentation, and comments for readability. HTML and CSS were validated using W3C and Jigsaw validators.
 
 ## Set & Up and Installations
 
@@ -20,34 +38,32 @@ HTML5 is used in conjunction with the Django template format. The base template 
 ## NB:
 This version of the application works well in a small law firm scenario. It can be scaled or linked to APIs and additional features can be added to handle matter maintainance and rates, for example. Currently, the app relies on the business user having applications and/or databases that could handle the matter, personnel, rates, roles databases. 
 
+2. ### Design, Development & Implementation
 
-## Project Documentation
+- #### [User Stories](/readme_docs/user_story.md)
 
-Click the links below to view each section 
+- #### [UX](/readme_docs/ux.md)
 
-### [User Stories](/readme_docs/user_story.md)
-This document outlines the key user stories defined for the **Better Billing** application.  
-Each story details a specific feature from the end-user perspective, highlighting the goals, motivations, and acceptance criteria that guided the development process.
+- #### [Testing](/readme_docs/testing.md)
 
----
+### Data Model Management
 
-### [UX](/readme_docs/ux.md)
-This document explains how user experience (UX) principles were applied throughout the development of the **Better Billing** application.  
-It covers the design rationale, information architecture, accessibility considerations, and visual hierarchy that guided the interface design.  
-The section also highlights how Bootstrap and custom CSS were used to create a consistent, responsive, and professional layout, supported by user feedback and iterative refinement.
+#### [Database Models & Schema](/readme_docs/db_schema.md)
 
+### Queries & Data Manipulation
 
----
+#### [CRUD](/readme_docs/crud.md)
 
-### [Testing](/readme_docs/testing.md)
-The testing documentation provides an overview of all testing methodologies used throughout the project, including **manual, functional, and unit testing**.  
-It explains how the system was validated to ensure reliability, usability, and compliance with the project’s requirements.
+### Deployment
 
----
+#### [Heroku](/readme_docs/heroku.md)
 
-### [Bugs](/readme_docs/bugs.md)
-This section records all major bugs identified during development, alongside their root causes and resolutions.  
-It demonstrates the debugging strategies, tools, and good practices applied to ensure a robust and maintainable codebase.
+### Security
+
+#### [Repository Management](/readme_docs/git.md)
+
+### Issues & Fixes
+#### [Bugs](/readme_docs/bugs.md)
 
 # Sources
 
