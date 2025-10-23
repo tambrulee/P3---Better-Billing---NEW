@@ -6,6 +6,7 @@ from django.conf import settings
 import traceback
 import logging
 log = logging.getLogger(__name__)
+from django.db.models import Q
 
 # --- Client lookup ---
 class Client(models.Model):
@@ -60,6 +61,8 @@ class Role(models.Model):
 
 # --- Personnel lookup ---
 
+ALLOWED_MANAGER_ROLES = ("Partner", "Associate Partner")
+
 class Personnel(models.Model):
     initials = models.CharField(max_length=10, unique=True)
     name     = models.CharField(max_length=255)
@@ -69,12 +72,76 @@ class Personnel(models.Model):
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL,
         related_name="personnel_profile"
     )
+    line_manager = models.ForeignKey(
+        "self",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="delegates",
+        limit_choices_to=Q(role__role__in=ALLOWED_MANAGER_ROLES),  # <- key line
+    )
+
     class Meta:
         ordering = ["initials"]
 
     def __str__(self):
         return f"{
             self.initials} - {self.name} ({self.role.role if self.role_id else '—'})"
+    
+    def clean(self):
+        super().clean()
+        if self.line_manager_id:
+            lm = self.line_manager
+            rn = (lm.role.role if lm and lm.role_id else "").strip()
+            if rn not in ALLOWED_MANAGER_ROLES:
+                raise ValidationError({
+                    "line_manager": f"Line manager must be one of: {
+                        ', '.join(ALLOWED_MANAGER_ROLES)}."
+                })
+
+    def save(self, *args, **kwargs):
+        self.full_clean()   # ensures clean() runs outside forms/admin
+        return super().save(*args, **kwargs)
+
+    # --- role normalization ---
+    def _role_key(self) -> str:
+        """Return a canonical key from Role.role."""
+        if not self.role_id:
+            return ""
+        r = self.role.role.strip().lower()
+
+        if "associate partner" in r:
+            return "associate_partner"
+        if r == "partner":
+            return "partner"
+        if "billing administrator" in r:
+            return "billing"
+        if "cashier" in r:
+            return "cashier"
+        # everything labeled '... - other fee earner' (plus synonyms) ⇒ fee_earner
+        if "other fee earner" in r or r.startswith(("paralegal", "case administrator", "trainee associate")):
+            return "fee_earner"
+        if r == "admin":  # only if you ever add a Role row called Admin
+            return "admin"
+        return r  # fallback
+
+    # --- booleans used by views/permissions ---
+    @property
+    def is_admin(self):             # prefer Django superuser if you don't have an Admin role row
+        return getattr(self.user, "is_superuser", False) or self._role_key() == "admin"
+    @property
+    def is_cashier(self):           return self._role_key() == "cashier"
+    @property
+    def is_billing(self):           return self._role_key() == "billing"
+    @property
+    def is_partner(self):           return self._role_key() == "partner"
+    @property
+    def is_associate_partner(self): return self._role_key() == "associate_partner"
+    @property
+    def is_fee_earner(self):        return self._role_key() == "fee_earner"
+
+    # Direct reports (single level)
+    def delegate_user_ids(self):
+        return self.delegates.exclude(user__isnull=True).values_list("user_id", flat=True)
  # --- Matter lookup ---
 
 class Matter(models.Model):

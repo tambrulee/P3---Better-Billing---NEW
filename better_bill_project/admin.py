@@ -122,10 +122,10 @@ class ClientAdmin(ImportExportModelAdmin):
 @admin.register(Personnel)
 class PersonnelAdmin(ImportExportModelAdmin):
     resource_class = PersonnelResource
-    list_display = ("initials", "name", "role", "rate_display")
+    list_display = ("initials", "name", "role", "rate_display", "line_manager")
     list_select_related = ("role",)
-    search_fields = ("initials", "name", "role__role")  # note the double underscore
-
+    search_fields = ("initials", "name", "role__role","line_manager", "user__username", "user__email")  # note the double underscore
+    autocomplete_fields = ["user", "role", "line_manager"]
     def rate_display(self, obj):
         """ Display the rate from the related Role model. """
         return obj.role.rate

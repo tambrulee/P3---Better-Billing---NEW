@@ -22,6 +22,23 @@ from urllib.parse import urlparse
 from xhtml2pdf import pisa
 from .models import Invoice
 
+# ---- Role helpers (server-side guards) ----
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import PermissionDenied
+
+def _p(user):
+    return getattr(user, "personnel_profile", None)
+
+def is_admin(user):    p=_p(user); return bool(p and p.is_admin) or bool(getattr(user, "is_superuser", False))
+def is_billing(user):  p=_p(user); return bool(p and p.is_billing)
+def is_cashier(user):  p=_p(user); return bool(p and p.is_cashier)
+def is_partner(user):  p=_p(user); return bool(p and p.is_partner)
+def is_assoc(user):    p=_p(user); return bool(p and p.is_associate_partner)
+def is_partner_or_assoc(user): return is_partner(user) or is_assoc(user) or is_admin(user)
+def is_view_invoices(user):    return any([is_admin(user), is_billing(user), is_cashier(user), is_partner(user), is_assoc(user)])
+def is_time_entry_user(user):  return not (is_billing(user) or is_cashier(user)) and _p(user) is not None
+
+
 # -- Views --
 @login_required
 def index(request):
@@ -82,6 +99,7 @@ Basic Views for Better Billing Project
 
 # Time Entry Form
 @login_required
+@user_passes_test(is_time_entry_user, login_url="/accounts/login/")  # redirects if not allowed
 def record_time(request):
     """ View for recording time entries and listing recent entries. """
     # Who can see everything? (Partners/Admins – reusing your post_invoice perm)
@@ -168,6 +186,7 @@ def record_time(request):
 
 @login_required
 @require_POST
+@user_passes_test(is_time_entry_user, login_url="/accounts/login/")  # redirects if not allowed
 def delete_time_entry(request, pk):
     """ Delete a time entry if unbilled and permitted.
     """
@@ -237,6 +256,7 @@ def _next_invoice_number():
             n = last.id or 0  # fallback
     return f"{n + 1:06d}"
 
+@user_passes_test(is_partner_or_assoc, login_url="/accounts/login/")
 def create_invoice(request):
     """ Create an invoice from selected unbilled WIP items.
     """
@@ -335,6 +355,7 @@ def create_invoice(request):
 
 
 # View Invoice
+@user_passes_test(is_view_invoices, login_url="/accounts/login/")
 def view_invoice(request):
     """ List and filter invoices with pagination and totals.
     """
@@ -507,6 +528,7 @@ def post_invoice_view(request):
 
 # Invoice Detail View
 @login_required
+@user_passes_test(is_view_invoices, login_url="/accounts/login/")
 def invoice_detail(request, pk):
     """ View detailed invoice information."""
     inv = get_object_or_404(
@@ -559,6 +581,7 @@ def _xhtml2pdf_link_callback(uri, rel):
     return uri
 
 @login_required
+@user_passes_test(is_view_invoices, login_url="/accounts/login/")
 def invoice_pdf(request, pk):
     """ Render an invoice as PDF and return as HTTP response."""
     inv = get_object_or_404(
@@ -600,17 +623,9 @@ def invoice_pdf(request, pk):
     resp["Content-Disposition"] = f'inline; filename="Invoice-{inv.number}.pdf"'
     return resp
 
-def mark_paid(self, when=None):
-    self.status = self.Status.PAID
-    if hasattr(self, "paid_at"):
-        from django.utils import timezone
-        self.paid_at = when or timezone.now()
-    self.save(update_fields=["status", "paid_at"] if hasattr(self, "paid_at") else ["status"])
-
-
 # Custom 404 page
 
 def custom_404(request, exception):
-    """ Custom 404 error page view."""
+    """ Custom 404 error handler."""
     return render(
         request, "errors/404.html", {"marker": "USING CUSTOM 404"}, status=404)

@@ -41,9 +41,6 @@ urlpatterns = [
     path("invoices/<int:pk>/", views.invoice_detail, name="invoice-detail"), 
      # PDF generation for invoice
     path("invoices/<int:pk>/pdf/", views.invoice_pdf, name="invoice-pdf"),  # NEW
-    
-    
-
 ]
 
 handler404 = "better_bill_project.views.custom_404"

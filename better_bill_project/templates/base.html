@@ -40,35 +40,58 @@
       <div class="collapse navbar-collapse" id="mainNav">
         {% with url_name=request.resolver_match.url_name %}
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {# Home — everyone #}
           <li class="nav-item">
             <a class="nav-link px-3 py-2 {% if url_name == 'index' %}active{% endif %}"
-               {% if url_name == 'index' %}aria-current="page"{% endif %}
-               href="{% url 'index' %}">Home</a>
+              {% if url_name == 'index' %}aria-current="page"{% endif %}
+              href="{% url 'index' %}">Home</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link px-3 py-2 {% if url_name == 'record-time' %}active{% endif %}"
-               {% if url_name == 'record-time' %}aria-current="page"{% endif %}
-               href="{% url 'record-time' %}">Record Hours</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link px-3 py-2 {% if url_name == 'create-invoice' %}active{% endif %}"
-               {% if url_name == 'create-invoice' %}aria-current="page"{% endif %}
-               href="{% url 'create-invoice' %}">Create Invoice</a>
-          </li>
-          {% if perms.better_bill_project.post_invoice %}
-          <li class="nav-item">
-            <a class="nav-link px-3 py-2 {% if url_name == 'post-invoice' %}active{% endif %}"
-               {% if url_name == 'post-invoice' %}aria-current="page"{% endif %}
-               href="{% url 'post-invoice' %}">Post Invoice</a>
-          </li>
+
+          {# Record Hours — hide from Billing + Cashier #}
+          {% if me and not me.is_billing and not me.is_cashier %}
+            <li class="nav-item">
+              <a class="nav-link px-3 py-2 {% if url_name == 'record-time' %}active{% endif %}"
+                {% if url_name == 'record-time' %}aria-current="page"{% endif %}
+                href="{% url 'record-time' %}">Record Hours</a>
+            </li>
           {% endif %}
-          <li class="nav-item">
-            <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
-               {% if url_name == 'view-invoice' %}aria-current="page"{% endif %}
-               href="{% url 'view-invoice' %}">View Invoice</a>
-          </li>
+
+          {# Create Invoice — Admin OR Partner OR Associate Partner #}
+          {% if me %}
+            {% if me.is_admin or me.is_partner or me.is_associate_partner %}
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 {% if url_name == 'create-invoice' %}active{% endif %}"
+                  {% if url_name == 'create-invoice' %}aria-current="page"{% endif %}
+                  href="{% url 'create-invoice' %}">Create Invoice</a>
+              </li>
+            {% endif %}
+          {% endif %}
+
+          {# Post Invoice — Billing OR Admin #}
+          {% if me %}
+            {% if me.is_admin or me.is_billing %}
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 {% if url_name == 'post-invoice' %}active{% endif %}"
+                  {% if url_name == 'post-invoice' %}aria-current="page"{% endif %}
+                  href="{% url 'post-invoice' %}">Post Invoice</a>
+              </li>
+            {% endif %}
+          {% endif %}
+
+          {# View Invoice — Admin OR Billing OR Cashier OR Partner OR Associate Partner #}
+          {% if me %}
+            {% if me.is_admin or me.is_billing or me.is_cashier or me.is_partner or me.is_associate_partner %}
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
+                  {% if url_name == 'view-invoice' %}aria-current="page"{% endif %}
+                  href="{% url 'view-invoice' %}">View Invoice</a>
+              </li>
+            {% endif %}
+          {% endif %}
         </ul>
         {% endwith %}
+      </div>
+
 
         <!-- Right side: login/user info -->
         <div class="navbar-nav ms-auto align-items-lg-center gap-2">
@@ -91,3 +114,4 @@
   {% block body_end %}{% endblock %}
 </body>
 </html>
+

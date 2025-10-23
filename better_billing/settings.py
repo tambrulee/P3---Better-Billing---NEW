@@ -85,14 +85,13 @@ else:
 
 ROOT_URLCONF = 'better_billing.urls'
 
-# If BASE_DIR is already defined like this, you're good:
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# (That makes BASE_DIR a string path to your project root)
+
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates")],  # ← use os.path.join here
+        "DIRS": [os.path.join(BASE_DIR, "templates")], # Global templates directory
         "APP_DIRS": True,
         "OPTIONS": {
             "debug": True, # Turn off template debug mode for production
@@ -101,7 +100,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                'django.template.context_processors.i18n',
+                "django.template.context_processors.i18n",
+                "better_bill_project.context_processors.personnel",
             ],
         },
     },
@@ -164,9 +164,6 @@ USE_TZ = True
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = "/static/"
-
-# Where you keep your own source static files (CSS/JS/images you edit)
-# STATICFILES_DIRS = [BASE_DIR / "static"]          #
 
 # The build output folder (DON'T edit files here by hand)
 STATIC_ROOT = BASE_DIR / "assets"               
