@@ -67,11 +67,11 @@
             {% endif %}
           {% endif %}
 
-          {# Post/create invoice tab #}
+          {# Post invoice tab #}
           {% if perms.better_bill_project.post_invoice %}
             <li class="nav-item">
-              <a class="nav-link {% if url_name == 'create-invoice' %}active{% endif %}"
-                href="{% url 'create-invoice' %}">Create / Post Invoice</a>
+              <a class="nav-link {% if url_name == 'post-invoice' %}active{% endif %}"
+                href="{% url 'post-invoice' %}">Post Invoice</a>
             </li>
           {% endif %}
 

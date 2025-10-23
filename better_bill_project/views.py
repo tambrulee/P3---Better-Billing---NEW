@@ -38,6 +38,11 @@ def is_partner_or_assoc(user): return is_partner(user) or is_assoc(user) or is_a
 def is_view_invoices(user):    return any([is_admin(user), is_billing(user), is_cashier(user), is_partner(user), is_assoc(user)])
 def is_time_entry_user(user):  return not (is_billing(user) or is_cashier(user)) and _p(user) is not None
 
+# --- Permission strings ---
+APP_LABEL = Invoice._meta.app_label
+PERM_VIEW_INV = f"{APP_LABEL}.view_invoice"
+PERM_POST_INV = f"{APP_LABEL}.post_invoice"
+
 
 # -- Views --
 @login_required
@@ -255,7 +260,8 @@ def _next_invoice_number():
             n = last.id or 0  # fallback
     return f"{n + 1:06d}"
 
-@user_passes_test(is_partner_or_assoc, login_url="/accounts/login/")
+@login_required
+@permission_required(PERM_POST_INV, raise_exception=True)
 def create_invoice(request):
     """ Create an invoice from selected unbilled WIP items.
     """
@@ -354,7 +360,8 @@ def create_invoice(request):
 
 
 # View Invoice
-@user_passes_test(is_view_invoices, login_url="/accounts/login/")
+@login_required
+@permission_required(PERM_VIEW_INV, raise_exception=True)
 def view_invoice(request):
     """ List and filter invoices with pagination and totals.
     """
@@ -438,8 +445,7 @@ def view_invoice(request):
     })
 
 @login_required
-@permission_required(
-    "better_bill_project.post_invoice", raise_exception=True)
+@permission_required(PERM_POST_INV, raise_exception=True)
 def post_invoice_view(request):
     """
     Partners can:
@@ -527,7 +533,7 @@ def post_invoice_view(request):
 
 # Invoice Detail View
 @login_required
-@user_passes_test(is_view_invoices, login_url="/accounts/login/")
+@permission_required(PERM_VIEW_INV, raise_exception=True)
 def invoice_detail(request, pk):
     """ View detailed invoice information."""
     inv = get_object_or_404(
@@ -580,7 +586,7 @@ def _xhtml2pdf_link_callback(uri, rel):
     return uri
 
 @login_required
-@user_passes_test(is_view_invoices, login_url="/accounts/login/")
+@permission_required(PERM_VIEW_INV, raise_exception=True)
 def invoice_pdf(request, pk):
     """ Render an invoice as PDF and return as HTTP response."""
     inv = get_object_or_404(
