@@ -67,26 +67,20 @@
             {% endif %}
           {% endif %}
 
-          {# Post Invoice — Billing OR Admin #}
-          {% if me %}
-            {% if me.is_admin or me.is_billing %}
-              <li class="nav-item">
-                <a class="nav-link px-3 py-2 {% if url_name == 'post-invoice' %}active{% endif %}"
-                  {% if url_name == 'post-invoice' %}aria-current="page"{% endif %}
-                  href="{% url 'post-invoice' %}">Post Invoice</a>
-              </li>
-            {% endif %}
+          {# Post/create invoice tab #}
+          {% if perms.better_bill_project.post_invoice %}
+            <li class="nav-item">
+              <a class="nav-link {% if url_name == 'create-invoice' %}active{% endif %}"
+                href="{% url 'create-invoice' %}">Create / Post Invoice</a>
+            </li>
           {% endif %}
 
-          {# View Invoice — Admin OR Billing OR Cashier OR Partner OR Associate Partner #}
-          {% if me %}
-            {% if me.is_admin or me.is_billing or me.is_cashier or me.is_partner or me.is_associate_partner %}
-              <li class="nav-item">
-                <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
-                  {% if url_name == 'view-invoice' %}aria-current="page"{% endif %}
-                  href="{% url 'view-invoice' %}">View Invoice</a>
-              </li>
-            {% endif %}
+          {# View invoices tab #}
+          {% if perms.better_bill_project.view_invoice %}
+            <li class="nav-item">
+              <a class="nav-link {% if url_name == 'invoice-list' %}active{% endif %}"
+                href="{% url 'view-invoice' %}">Invoices</a>
+            </li>
           {% endif %}
         </ul>
         {% endwith %}

@@ -7,6 +7,9 @@ import traceback
 import logging
 log = logging.getLogger(__name__)
 from django.db.models import Q
+from django.contrib.auth.models import Permission
+Permission.objects.filter(codename="post_invoice").exists()
+
 
 # --- Client lookup ---
 class Client(models.Model):
@@ -369,6 +372,10 @@ class Ledger(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    permissions = [
+            ("post_invoice", "Can post invoices"),   # <- custom
+        ]
 
     def __str__(self):
         return f"Ledger for {self.invoice.number} — {self.total}"

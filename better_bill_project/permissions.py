@@ -1,3 +1,5 @@
+from .models import Personnel
+
 class Scope:
     def __init__(self, p: Personnel):
         self.p = p

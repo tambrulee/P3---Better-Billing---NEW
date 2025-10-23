@@ -102,7 +102,6 @@ Basic Views for Better Billing Project
 @user_passes_test(is_time_entry_user, login_url="/accounts/login/")  # redirects if not allowed
 def record_time(request):
     """ View for recording time entries and listing recent entries. """
-    # Who can see everything? (Partners/Admins – reusing your post_invoice perm)
     is_partner = request.user.has_perm(
         "better_bill_project.post_invoice") or request.user.is_superuser
     fe_filter = request.GET.get("fe")
@@ -160,7 +159,7 @@ def record_time(request):
 
     # --- Normal create form flow (unchanged) ---
     if request.method == "POST" and not request.POST.get("update_id"):
-        form = TimeEntryForm(request.POST)
+        form = TimeEntryForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Time entry saved.")
@@ -169,7 +168,7 @@ def record_time(request):
             messages.error(request, "Please correct the errors below.")
         form_qe = None  # not used in this branch
     else:
-        form = TimeEntryForm()
+        form = TimeEntryForm(user=request.user)
         form_qe = None
 
         return render(request, "better_bill_project/record.html", {
@@ -265,7 +264,7 @@ def create_invoice(request):
     readonly_tax = Decimal("20.00")  # percent
 
     if request.method == "POST":
-        form = InvoiceForm(request.POST)
+        form = InvoiceForm(request.POST, user=request.user)
         if form.is_valid():
             wip_ids = request.POST.getlist("wip_ids")
             if not wip_ids:
@@ -316,7 +315,7 @@ def create_invoice(request):
                         request, "Invoice created successfully.", extra_tags="invoice")
         return redirect("create-invoice")  # or wherever you want to land post-PRG
     else:
-        form = InvoiceForm(request.GET or None)
+        form = InvoiceForm(request.GET, user=request.user or None)
 
     # --- Build WIP list for current selection (works for GET and invalid POST) ---
     # Start from a base queryset so we don't lose results when only 'matter' is set.
