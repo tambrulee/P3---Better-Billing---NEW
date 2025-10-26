@@ -91,10 +91,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates")], # Global templates directory
+        "DIRS": [os.path.join(BASE_DIR, "templates")],  # Global templates directory
         "APP_DIRS": True,
         "OPTIONS": {
-            "debug": True, # Turn off template debug mode for production
+            "debug": True,  # Turn off for production
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
@@ -103,9 +103,11 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
                 "better_bill_project.context_processors.personnel",
             ],
+            "builtins": ["django.templatetags.i18n"],  # <-- enables {% trans %} everywhere
         },
     },
 ]
+
 
 WSGI_APPLICATION = 'better_billing.wsgi.application'
 
