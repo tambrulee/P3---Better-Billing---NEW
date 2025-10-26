@@ -7,105 +7,112 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Better Billing{% endblock %}</title>
-  <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    
-  {# global CSS/JS here #}
-     <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
-<!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/better_bill_logo.png' %}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/better_bill_logo.png' %}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/better_bill_logo.png' %}">
 
-  {# page-specific head additions go here #}
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+  <!-- Global CSS -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'U' %}">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/better_bill_logo.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/better_bill_logo.png' %}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/better_bill_logo.png' %}">
+
   {% block head_extra %}{% endblock %}
 </head>
 <body>
-  <header class="sticky-top">
+<header class="sticky-top">
   <a class="skip-link visually-hidden-focusable" href="#main-content">Skip to main content</a>
 
   {% block header %}
-  <nav class="navbar navbar-expand-lg border-bottom shadow-sm" role="navigation" aria-label="Primary">
+  <nav class="navbar navbar-expand-lg navbar-light bg-body-tertiary border-bottom shadow-sm" role="navigation" aria-label="Primary">
     <div class="container">
-      <!-- Brand -->
+      <!-- Brand (always visible) -->
       <a class="navbar-brand fw-bold" href="{% url 'index' %}">Better Billing</a>
 
-      <!-- Mobile toggler -->
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
               aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- Collapsible area -->
-      <div class="collapse navbar-collapse" id="mainNav">
-        {% with url_name=request.resolver_match.url_name %}
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          {# Home — everyone #}
-          <li class="nav-item">
-            <a class="nav-link px-3 py-2 {% if url_name == 'index' %}active{% endif %}"
-              {% if url_name == 'index' %}aria-current="page"{% endif %}
-              href="{% url 'index' %}">Home</a>
-          </li>
-
-          {# Record Hours — hide from Billing + Cashier #}
-          {% if me and not me.is_billing and not me.is_cashier %}
-            <li class="nav-item">
-              <a class="nav-link px-3 py-2 {% if url_name == 'record-time' %}active{% endif %}"
-                {% if url_name == 'record-time' %}aria-current="page"{% endif %}
-                href="{% url 'record-time' %}">Record Hours</a>
-            </li>
-          {% endif %}
-
-          {# Create Invoice — Admin OR Partner OR Associate Partner #}
-          {% if me %}
-            {% if me.is_admin or me.is_partner or me.is_associate_partner %}
+      {% if request.user.is_authenticated %}
+        <div class="collapse navbar-collapse" id="mainNav">
+          {% with url_name=request.resolver_match.url_name %}
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <!-- Home -->
               <li class="nav-item">
-                <a class="nav-link px-3 py-2 {% if url_name == 'create-invoice' %}active{% endif %}"
-                  {% if url_name == 'create-invoice' %}aria-current="page"{% endif %}
-                  href="{% url 'create-invoice' %}">Create Invoice</a>
+                <a class="nav-link px-3 py-2 {% if url_name == 'index' %}active{% endif %}"
+                   {% if url_name == 'index' %}aria-current="page"{% endif %}
+                   href="{% url 'index' %}">Home</a>
               </li>
-            {% endif %}
-          {% endif %}
 
-          {# Post invoice tab #}
-          {% if perms.better_bill_project.post_invoice %}
-            <li class="nav-item">
-              <a class="nav-link {% if url_name == 'post-invoice' %}active{% endif %}"
-                href="{% url 'post-invoice' %}">Post Invoice</a>
-            </li>
-          {% endif %}
+              <!-- Record Hours — hide from Billing + Cashier -->
+              {% if me and not me.is_billing and not me.is_cashier %}
+                <li class="nav-item">
+                  <a class="nav-link px-3 py-2 {% if url_name == 'record-time' %}active{% endif %}"
+                     {% if url_name == 'record-time' %}aria-current="page"{% endif %}
+                     href="{% url 'record-time' %}">Record Hours</a>
+                </li>
+              {% endif %}
 
-          {# View invoices tab #}
-          {% if perms.better_bill_project.view_invoice %}
-            <li class="nav-item">
-              <a class="nav-link {% if url_name == 'invoice-list' %}active{% endif %}"
-                href="{% url 'view-invoice' %}">Invoices</a>
-            </li>
-          {% endif %}
-        </ul>
-        {% endwith %}
-      </div>
+              <!-- Create Invoice — Admin OR Partner OR Associate Partner -->
+              {% if me %}
+                {% if me.is_admin or me.is_partner or me.is_associate_partner %}
+                  <li class="nav-item">
+                    <a class="nav-link px-3 py-2 {% if url_name == 'create-invoice' %}active{% endif %}"
+                       {% if url_name == 'create-invoice' %}aria-current="page"{% endif %}
+                       href="{% url 'create-invoice' %}">Create Invoice</a>
+                  </li>
+                {% endif %}
+              {% endif %}
 
+              <!-- Post invoice -->
+              {% if perms.better_bill_project.post_invoice %}
+                <li class="nav-item">
+                  <a class="nav-link px-3 py-2 {% if url_name == 'post-invoice' %}active{% endif %}"
+                     href="{% url 'post-invoice' %}">Post Invoice</a>
+                </li>
+              {% endif %}
 
-        <!-- Right side: login/user info -->
-        <div class="navbar-nav ms-auto align-items-lg-center gap-2">
-          {% include "partials/_topbar.html" %}
+              <!-- View invoices -->
+              {% if perms.better_bill_project.view_invoice %}
+                <li class="nav-item">
+                  <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
+                     href="{% url 'view-invoice' %}">Invoices</a>
+                </li>
+              {% endif %}
+            </ul>
+
+            <!-- Right side: account area -->
+            <div class="navbar-nav ms-auto align-items-lg-center gap-2">
+              {% include "partials/_topbar.html" %}
+            </div>
+          {% endwith %}
         </div>
-      </div>
+      {% else %}
+        <!-- Logged out: show only right-side (e.g., Login/Register in _topbar.html) -->
+        <div class="d-lg-flex ms-auto">
+          <div class="navbar-nav">
+            {% include "partials/_topbar.html" %}
+          </div>
+        </div>
+      {% endif %}
     </div>
   </nav>
   {% endblock %}
 </header>
 
-  <main id="content">{% block content %}{% endblock %}</main>
+<main id="main-content">
+  {% block content %}{% endblock %}
+</main>
 
-  <footer>{% block footer %}{% endblock %}</footer>
+<footer>
+  {% block footer %}{% endblock %}
+</footer>
 
-  {# page-specific scripts placed at the end of body #}
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-
-  {% block body_end %}{% endblock %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+{% block body_end %}{% endblock %}
 </body>
 </html>
-
