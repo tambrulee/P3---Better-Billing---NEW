@@ -12,7 +12,8 @@ from django.contrib import messages
 from django.urls import reverse
 from django.template.loader import render_to_string
 from .forms import TimeEntryForm, InvoiceForm, TimeEntryQuickEditForm
-from .models import TimeEntry, Client, Matter
+from .models import TimeEntry, Client, Matter, ALLOWED_MANAGER_ROLES
+from django.db.models import Q, Exists, OuterRef
 from .models import WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
 from django.db import transaction
 from django.contrib.auth.decorators import login_required, permission_required
@@ -45,56 +46,77 @@ PERM_POST_INV = f"{APP_LABEL}.post_invoice"
 
 
 # -- Views --
+
+# Dashboard View
+def _team_personnel_ids(me: Personnel | None) -> list[int]:
+    if not me:
+        return []
+    ids = [me.id]
+    if me.role and getattr(me.role, "role", None) in ALLOWED_MANAGER_ROLES:
+        ids += list(me.delegates.values_list("id", flat=True))
+    return ids
+
 @login_required
 def index(request):
-    """ 
-Basic Views for Better Billing Project 
-    """
-    # Unbilled WIP
+    me: Personnel | None = getattr(request.user, "personnel_profile", None)
+    if not me:
+        context = {
+            "wip_items": [],
+            "wip_total_hours": Decimal("0.0"),
+            "draft_invoices": [],
+            "draft_subtotal": Decimal("0.00"),
+            "draft_tax": Decimal("0.00"),
+            "draft_total": Decimal("0.00"),
+            "posted_invoices": [],
+            "post_subtotal": Decimal("0.00"),
+            "post_tax": Decimal("0.00"),
+            "post_total": Decimal("0.00"),
+        }
+        return render(request, "better_bill_project/index.html", context)
+
+    team_ids = _team_personnel_ids(me)
+
+    # Unbilled WIP – scope by WIP.fee_earner
     wip_qs = (
         WIP.objects
         .select_related("matter", "client")
-        .filter(status="unbilled")
+        .filter(status="unbilled", fee_earner_id__in=team_ids)   # ← use fee_earner
         .order_by("-created_at")
     )
-    wip_total_hours = wip_qs.aggregate(
-        total=Sum("hours_worked"))["total"] or Decimal("0.0")
+    wip_total_hours = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
 
-    # Draft/Posted via Ledger status (only invoices that HAVE a ledger)
-    draft_qs = (
+    # Invoices – scope via lines referencing WIP done by my team (wip -> fee_earner)
+    invoice_base = (
         Invoice.objects
         .select_related("client", "matter", "ledger")
-        .filter(ledger__status="draft")
-        .order_by("-created_at")[:10]
-    )
-    posted_qs = (
-        Invoice.objects
-        .select_related("client", "matter", "ledger")
-        .filter(ledger__status="posted")
-        .order_by("-created_at")[:10]
+        .annotate(
+            has_team_work=Exists(
+                InvoiceLine.objects.filter(
+                    invoice_id=OuterRef("pk"),
+                    wip__fee_earner_id__in=team_ids,           # ← key hop
+                )
+            )
+        )
+        .filter(has_team_work=True)
     )
 
-    # Totals (aggregate over related ledger fields)
+    draft_qs  = invoice_base.filter(ledger__status="draft").order_by("-created_at")[:10]
+    posted_qs = invoice_base.filter(ledger__status="posted").order_by("-created_at")[:10]
+
     draft_totals = draft_qs.aggregate(
-        subtotal=Sum("ledger__subtotal"),
-        tax=Sum("ledger__tax"),
-        total=Sum("ledger__total"),
+        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"),
     )
     post_totals = posted_qs.aggregate(
-        subtotal=Sum("ledger__subtotal"),
-        tax=Sum("ledger__tax"),
-        total=Sum("ledger__total"),
+        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"),
     )
 
     context = {
         "wip_items": wip_qs[:10],
         "wip_total_hours": wip_total_hours,
-
         "draft_invoices": draft_qs,
         "draft_subtotal": draft_totals["subtotal"] or Decimal("0.00"),
         "draft_tax":      draft_totals["tax"]      or Decimal("0.00"),
         "draft_total":    draft_totals["total"]    or Decimal("0.00"),
-
         "posted_invoices": posted_qs,
         "post_subtotal": post_totals["subtotal"] or Decimal("0.00"),
         "post_tax":      post_totals["tax"]      or Decimal("0.00"),
@@ -120,7 +142,7 @@ def record_time(request):
     if is_partner:
         if fe_filter:
             base_qs = base_qs.filter(fee_earner_id=fe_filter)
-        fee_earners = Personnel.objects.order_by("initials")
+        fee_earners = Personnel.objects.order_by("fee_earner")
     else:
         if personnel_for_user:
             base_qs = base_qs.filter(fee_earner=personnel_for_user)
