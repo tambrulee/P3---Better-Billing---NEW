@@ -535,7 +535,6 @@ def post_invoice_view(request):
 @login_required
 @permission_required(PERM_VIEW_INV, raise_exception=True)
 def invoice_detail(request, pk):
-    """ View detailed invoice information."""
     inv = get_object_or_404(
         Invoice.objects
         .select_related("client", "matter", "ledger")
@@ -548,11 +547,17 @@ def invoice_detail(request, pk):
         pk=pk
     )
 
-    # Fallbacks if, for any reason, a ledger doesn't exist
-    subtotal = inv.ledger.subtotal if getattr(inv, "ledger", None) else inv.subtotal
-    tax      = inv.ledger.tax      if getattr(inv, "ledger", None) else inv.tax_amount
-    total    = inv.ledger.total    if getattr(inv, "ledger", None) else inv.total
-    status   = inv.ledger.status   if getattr(inv, "ledger", None) else "—"
+    has_ledger = getattr(inv, "ledger", None) is not None
+    ledger = inv.ledger if has_ledger else None
+
+    # Fallbacks if no ledger exists
+    subtotal = ledger.subtotal if has_ledger else inv.subtotal
+    tax      = ledger.tax      if has_ledger else inv.tax_amount
+    total    = ledger.total    if has_ledger else inv.total
+    status   = ledger.status   if has_ledger else "—"
+
+    # Only allow “settle” when the LEDGER is posted (not the invoice)
+    can_settle = has_ledger and ledger.status == "posted"
 
     return render(request, "better_bill_project/invoice_detail.html", {
         "inv": inv,
@@ -560,7 +565,9 @@ def invoice_detail(request, pk):
         "tax": tax,
         "total": total,
         "status": status,
+        "can_settle": can_settle,
     })
+
 
 # PDF Viewer
 
@@ -585,6 +592,7 @@ def _xhtml2pdf_link_callback(uri, rel):
         return os.path.join(settings.MEDIA_ROOT, path)
     return uri
 
+# PDF generation view
 @login_required
 @permission_required(PERM_VIEW_INV, raise_exception=True)
 def invoice_pdf(request, pk):
@@ -627,6 +635,67 @@ def invoice_pdf(request, pk):
     resp = HttpResponse(pdf_bytes, content_type="application/pdf")
     resp["Content-Disposition"] = f'inline; filename="Invoice-{inv.number}.pdf"'
     return resp
+
+# Settle Invoice View
+
+@login_required
+@permission_required(PERM_VIEW_INV, raise_exception=True)
+@require_POST
+@transaction.atomic
+def settle_invoice(request, pk):
+    # Pull related ledger in one query
+    invoice = get_object_or_404(
+        Invoice.objects.select_related("ledger"),
+        pk=pk
+    )
+
+    # Ensure a ledger exists
+    ledger = getattr(invoice, "ledger", None)
+    if ledger is None:
+        messages.error(request, "No ledger entry exists for this invoice.")
+        return redirect("invoice-detail", pk=pk)
+
+    # Only settle if the LEDGER is posted
+    if ledger.status != "posted":
+        messages.error(request, "Only posted invoices can be settled.")
+        return redirect("invoice-detail", pk=pk)
+
+    # Idempotency: if already paid, just inform
+    if ledger.status == "paid":
+        messages.info(request, "This invoice is already marked as paid.")
+        return redirect("invoice-detail", pk=pk)
+
+    # Update ledger -> paid
+    ledger.status = "paid"
+    ledger.paid_at = timezone.now()
+    ledger.save(update_fields=["status", "paid_at"])
+
+    messages.success(request, f"Invoice {invoice.number} marked as settled.")
+    return redirect("invoice-detail", pk=pk)
+
+# Unsettle Invoice View
+@permission_required(PERM_VIEW_INV, raise_exception=True)
+@require_POST
+@transaction.atomic
+def unsettle_invoice(request, pk):
+    invoice = get_object_or_404(Invoice.objects.select_related("ledger"), pk=pk)
+
+    ledger = getattr(invoice, "ledger", None)
+    if ledger is None:
+        messages.error(request, "No ledger entry exists for this invoice.")
+        return redirect("invoice-detail", pk=pk)
+
+    if ledger.status != "paid":
+        messages.error(request, "Only paid invoices can be unmarked as settled.")
+        return redirect("invoice-detail", pk=pk)
+
+    # Revert: paid -> posted, clear paid_at
+    ledger.status = "posted"
+    ledger.paid_at = None
+    ledger.save(update_fields=["status", "paid_at"])
+
+    messages.success(request, f"Invoice {invoice.number} unmarked as settled.")
+    return redirect("invoice-detail", pk=pk)
 
 # Custom 404 page
 

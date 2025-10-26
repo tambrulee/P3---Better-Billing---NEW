@@ -4,15 +4,36 @@
 {% block title %}Invoice {{ inv.number }}{% endblock %}
 
 {% block content %}
+
+
+
 <main class="container py-4">
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2 class="page-title mb-0">Invoice {{ inv.number }}</h2>
   <div class="d-flex gap-2">
-    <a class="btn btn-outline-primary btn-sm" href="{% url 'invoice-pdf' inv.pk %}" target="_blank">
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'view-invoice' %}">&larr; Back to invoices</a>
+    <a class="btn btn-success btn-sm" href="{% url 'invoice-pdf' inv.pk %}" target="_blank">
       Download PDF
     </a>
-    <a class="btn btn-outline-secondary btn-sm" href="{% url 'view-invoice' %}">&larr; Back to invoices</a>
+     <!--  Mark as settled button (uses inv + can_settle) -->
+      {% if can_settle %}
+        <form method="post" action="{% url 'invoice-settle' inv.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm">
+            Mark as settled
+          </button>
+        </form>
+      {% endif %}
+    <!-- Unmark as settled button (uses inv.ledger.status) -->
+      {% if inv.ledger and inv.ledger.status == 'paid' %}
+        <form method="post" action="{% url 'invoice-unsettle' inv.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm">
+            Unmark as settled
+          </button>
+        </form>
+{% endif %}
   </div>
 </div>
 
