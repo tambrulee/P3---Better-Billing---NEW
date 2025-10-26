@@ -1,30 +1,11 @@
 {% extends "base.html" %}
-{% load static %}
-<body class="bg-light">
-  <main class="container py-5">
-    <div class="row justify-content-center">
-      <div class="col-md-8">
-        <div class="card shadow-sm">
-          <div class="card-body text-center p-5">
-            <div class="bb-ghost">🧾</div>
-            <h1 class="h3 mt-3">404 — Page not found</h1>
-            <p class="text-muted">
-              The page you’re looking for doesn’t exist, was moved, or never got billed. ¯\_(ツ)_/¯
-            </p>
-            <div class="d-flex gap-2 justify-content-center mt-3">
-              <a class="btn btn-primary" href="{% url 'index' %}">Back to Dashboard</a>
-              <a class="btn btn-outline-secondary" href="javascript:history.back()">Go back</a>
-            </div>
-            {% if request.path %}
-              <p class="small text-muted mt-3">Tried URL: <code>{{ request.path }}</code></p>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-{% endblock %}
 
-<!-- Scripts (pulls in bootstrap)-->
-{% block body_end %}
+{% block title %}404 – Page Not Found{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h1 class="display-4 text-muted">404 – Page Not Found</h1>
+  <p class="lead mt-3">Sorry, the page you requested doesn’t exist.</p>
+  <a href="{% url 'index' %}" class="btn btn-success mt-4">Back to Dashboard</a>
+</div>
 {% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load static i18n %}
+{% block title %}Permission Denied{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <h1 class="display-4 text-muted">403 – Permission Denied</h1>
+  <p class="lead mt-3">Sorry, you don’t have permission to access this page.</p>
+  <a href="{% url 'index' %}" class="btn btn-primary mt-4">Back to Dashboard</a>
+</div>
+{% endblock %}

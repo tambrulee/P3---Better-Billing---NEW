@@ -16,13 +16,27 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from better_bill_project import views as index_views
+from django.shortcuts import render
+from django.http import HttpResponseForbidden
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', index_views.index, name='index'),
     path("", include("better_bill_project.urls")),
         # Force template for password reset
 ]
 
-handler404 = "better_bill_project.views.custom_404"
+
+# ---- Error handlers (must be in ROOT urlconf) ----
+
+def error_403(request, exception=None):
+    return render(request, "errors/403.html", status=403)
+
+def error_404(request, exception=None):
+    return render(request, "errors/404.html", status=404)
+
+def error_500(request):
+    return render(request, "errors/500.html", status=500)
+
+handler403 = "better_billing.urls.error_403"
+handler404 = "better_billing.urls.error_404"
+handler500 = "better_billing.urls.error_500"
