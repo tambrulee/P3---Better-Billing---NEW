@@ -76,12 +76,12 @@
                 </li>
               {% endif %}
 
-              <!-- View invoices -->
-              {% if perms.better_bill_project.view_invoice %}
-                <li class="nav-item">
-                  <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
-                     href="{% url 'view-invoice' %}">Invoices</a>
-                </li>
+              <!-- View Invoices -->
+              {% if can_view_invoices %}
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
+                  href="{% url 'view-invoice' %}">Invoices</a>
+              </li>
               {% endif %}
             </ul>
 

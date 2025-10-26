@@ -55,7 +55,7 @@
         </div>
       </div>
     </div>
-
+  {% if can_view_invoices %}
     <!-- Draft Invoices -->
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm h-100">
@@ -143,6 +143,7 @@
         </div>
       </div>
     </div>
+    {% endif %}
   </div>
 </main>
 {% endblock %}

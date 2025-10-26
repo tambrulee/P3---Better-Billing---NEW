@@ -1,27 +1,28 @@
-import os
-from decimal import Decimal
-from django.utils import timezone
-from django.core.paginator import Paginator
-from django.utils.dateparse import parse_date
-from django.db.models import Sum
-from django.shortcuts import render, redirect, get_object_or_404
-from io import BytesIO
-from django.conf import settings
-from django.http import HttpResponse, HttpResponseServerError
-from django.contrib import messages
-from django.urls import reverse
-from django.template.loader import render_to_string
-from .forms import TimeEntryForm, InvoiceForm, TimeEntryQuickEditForm
-from .models import TimeEntry, Client, Matter, ALLOWED_MANAGER_ROLES
-from django.db.models import Q, Exists, OuterRef
+import os # for path manipulations
+from decimal import Decimal # for precise decimal arithmetic
+from django.utils import timezone # for timezone-aware date/time
+from django.core.paginator import Paginator # for paginating querysets
+from django.utils.dateparse import parse_date # for parsing date strings
+from django.db.models import Sum # for aggregations
+from django.shortcuts import render, redirect, get_object_or_404 # common shortcuts
+from io import BytesIO # for in-memory byte streams
+from django.conf import settings # for accessing project settings
+from django.http import HttpResponse, HttpResponseServerError # for HTTP responses
+from django.contrib import messages # for user messages
+from django.urls import reverse # for URL reversing
+from django.template.loader import render_to_string # for rendering templates to strings
+from .forms import TimeEntryForm, InvoiceForm, TimeEntryQuickEditForm # custom forms
+from .models import TimeEntry, Client, Matter, Invoice, ALLOWED_MANAGER_ROLES
 from .models import WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
-from django.db import transaction
-from django.contrib.auth.decorators import login_required, permission_required
-from django.views.decorators.http import require_POST
-from django.contrib.staticfiles import finders
-from urllib.parse import urlparse
-from xhtml2pdf import pisa
-from .models import Invoice
+from django.db.models import Q, Exists, OuterRef # for complex queries
+from django.db import transaction # for atomic transactions
+from django.contrib.auth.decorators import login_required, permission_required # for auth decorators
+from django.core.exceptions import PermissionDenied
+from django.views.decorators.http import require_POST # for HTTP method restriction
+from django.contrib.staticfiles import finders # for static file finding
+from urllib.parse import urlparse # for URL parsing
+from xhtml2pdf import pisa # for PDF generation
+from .permissions import Scope # import your permissions class
 
 # ---- Role helpers (server-side guards) ----
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -48,6 +49,10 @@ PERM_POST_INV = f"{APP_LABEL}.post_invoice"
 # -- Views --
 
 # Dashboard View
+
+# Roles that should ONLY see Unbilled Time
+WIP_ONLY_ROLES = ("Case administrator", "Trainee associate", "Paralegal")
+
 def _team_personnel_ids(me: Personnel | None) -> list[int]:
     if not me:
         return []
@@ -58,57 +63,45 @@ def _team_personnel_ids(me: Personnel | None) -> list[int]:
 
 @login_required
 def index(request):
-    me: Personnel | None = getattr(request.user, "personnel_profile", None)
+    me = getattr(request.user, "personnel_profile", None)
     if not me:
-        context = {
-            "wip_items": [],
-            "wip_total_hours": Decimal("0.0"),
-            "draft_invoices": [],
-            "draft_subtotal": Decimal("0.00"),
-            "draft_tax": Decimal("0.00"),
-            "draft_total": Decimal("0.00"),
-            "posted_invoices": [],
-            "post_subtotal": Decimal("0.00"),
-            "post_tax": Decimal("0.00"),
-            "post_total": Decimal("0.00"),
-        }
+        # ... same empty context as before, plus:
+        context["can_view_invoices"] = False
         return render(request, "better_bill_project/index.html", context)
 
+    can_view_invoices = Scope(me).can_view_invoice()
     team_ids = _team_personnel_ids(me)
 
-    # Unbilled WIP – scope by WIP.fee_earner
-    wip_qs = (
-        WIP.objects
-        .select_related("matter", "client")
-        .filter(status="unbilled", fee_earner_id__in=team_ids)   # ← use fee_earner
-        .order_by("-created_at")
-    )
+    # Unbilled WIP (always)
+    wip_qs = (WIP.objects
+              .select_related("matter", "client")
+              .filter(status="unbilled", fee_earner_id__in=team_ids)
+              .order_by("-created_at"))
     wip_total_hours = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
 
-    # Invoices – scope via lines referencing WIP done by my team (wip -> fee_earner)
-    invoice_base = (
-        Invoice.objects
-        .select_related("client", "matter", "ledger")
-        .annotate(
-            has_team_work=Exists(
+    if can_view_invoices:
+        invoice_base = (Invoice.objects
+            .select_related("client", "matter", "ledger")
+            .annotate(has_team_work=Exists(
                 InvoiceLine.objects.filter(
                     invoice_id=OuterRef("pk"),
-                    wip__fee_earner_id__in=team_ids,           # ← key hop
+                    wip__fee_earner_id__in=team_ids
                 )
-            )
-        )
-        .filter(has_team_work=True)
-    )
-
-    draft_qs  = invoice_base.filter(ledger__status="draft").order_by("-created_at")[:10]
-    posted_qs = invoice_base.filter(ledger__status="posted").order_by("-created_at")[:10]
-
-    draft_totals = draft_qs.aggregate(
-        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"),
-    )
-    post_totals = posted_qs.aggregate(
-        subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"),
-    )
+            ))
+            .filter(has_team_work=True))
+        draft_qs  = invoice_base.filter(ledger__status="draft").order_by("-created_at")[:10]
+        posted_qs = invoice_base.filter(ledger__status="posted").order_by("-created_at")[:10]
+        draft_totals = draft_qs.aggregate(subtotal=Sum("ledger__subtotal"),
+                                          tax=Sum("ledger__tax"),
+                                          total=Sum("ledger__total"))
+        post_totals  = posted_qs.aggregate(subtotal=Sum("ledger__subtotal"),
+                                           tax=Sum("ledger__tax"),
+                                           total=Sum("ledger__total"))
+    else:
+        draft_qs = posted_qs = []
+        draft_totals = post_totals = {"subtotal": Decimal("0.00"),
+                                      "tax": Decimal("0.00"),
+                                      "total": Decimal("0.00")}
 
     context = {
         "wip_items": wip_qs[:10],
@@ -118,9 +111,10 @@ def index(request):
         "draft_tax":      draft_totals["tax"]      or Decimal("0.00"),
         "draft_total":    draft_totals["total"]    or Decimal("0.00"),
         "posted_invoices": posted_qs,
-        "post_subtotal": post_totals["subtotal"] or Decimal("0.00"),
-        "post_tax":      post_totals["tax"]      or Decimal("0.00"),
-        "post_total":    post_totals["total"]    or Decimal("0.00"),
+        "post_subtotal":  post_totals["subtotal"]  or Decimal("0.00"),
+        "post_tax":       post_totals["tax"]       or Decimal("0.00"),
+        "post_total":     post_totals["total"]     or Decimal("0.00"),
+        "can_view_invoices": can_view_invoices,  # for the template
     }
     return render(request, "better_bill_project/index.html", context)
 
@@ -589,6 +583,22 @@ def invoice_detail(request, pk):
         "status": status,
         "can_settle": can_settle,
     })
+
+def _can_view_invoices(user) -> bool:
+    me = getattr(user, "personnel_profile", None)
+    return bool(me and Scope(me).can_view_invoice())
+
+def require_invoice_access(viewfunc):
+    @login_required
+    def _wrapped(request, *args, **kwargs):
+        if not _can_view_invoices(request.user):
+            raise PermissionDenied
+        return viewfunc(request, *args, **kwargs)
+    return _wrapped
+
+@require_invoice_access
+def view_invoice(request):
+    ...
 
 
 # PDF Viewer
