@@ -1,0 +1,1157 @@
+
+
+
+<!doctype html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+  <!-- Global CSS -->
+  <link rel="stylesheet" href="/static/css/style.cee4bdb3a1a4.css?v=1761608024">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/images/better_bill_logo.76ab0ab892ef.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/images/better_bill_logo.76ab0ab892ef.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/images/better_bill_logo.76ab0ab892ef.png">
+
+  
+</head>
+<body>
+<header class="sticky-top">
+  <a class="skip-link visually-hidden-focusable" href="#main-content">Skip to main content</a>
+
+  
+  <nav class="navbar navbar-expand-lg navbar-light bg-body-tertiary border-bottom shadow-sm" role="navigation" aria-label="Primary">
+    <div class="container">
+      <!-- Brand (always visible) -->
+      <a class="navbar-brand fw-bold" href="/index.html">Better Billing</a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      
+        <div class="collapse navbar-collapse" id="mainNav">
+          
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <!-- Home -->
+              <li class="nav-item">
+                <a class="nav-link px-3 py-2 "
+                   
+                   href="/index.html">Home</a>
+              </li>
+
+              <!-- Record Hours — hide from Billing + Cashier -->
+              
+
+
+              <!-- Create Invoice — Admin OR Partner OR Associate Partner -->
+              
+
+              <!-- Post invoice -->
+              
+                <li class="nav-item">
+                  <a class="nav-link px-3 py-2 "
+                     href="/invoices/post/">Post Invoice</a>
+                </li>
+              
+
+              <!-- View Invoices -->
+              
+                <li class="nav-item">
+                  <a class="nav-link px-3 py-2 active"
+                    href="/view_invoice.html">Invoices</a>
+                </li>
+              
+
+
+            </ul>
+
+            <!-- Right side: account area -->
+            <div class="navbar-nav ms-auto align-items-lg-center gap-2">
+              
+
+  <div class="d-flex align-items-center gap-2 gap-lg-3">
+    <span class="navbar-text d-none d-md-inline">Logged in as</span>
+    <span class="fw-semibold">betteradmin</span>
+
+    
+    
+    
+
+    <form method="post" action="/accounts/logout/" class="m-0">
+      <input type="hidden" name="csrfmiddlewaretoken" value="7Vj3DmgZCNu6jF3YojQmr6LhIRMvv2WbTwTr949elogM7BKVuEA6EpMpcdStrRK4">
+      <button class="btn btn-outline-secondary btn-sm">Logout</button>
+    </form>
+  </div>
+
+
+
+            </div>
+          
+        </div>
+      
+    </div>
+  </nav>
+  
+</header>
+
+<main id="main-content">
+  
+    <section class="container py-4">
+        <!-- Page Title -->
+   <h2 class="page-title">View Invoice</h2>
+  <!-- Filters -->
+  <form method="get" class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Invoice #</label>
+          <input type="text" name="number" value="" class="form-control" placeholder="e.g. 2025-0001">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Client</label>
+          <select name="client" id="id_ledger_client" class="form-select">
+            <option value="">— Any —</option>
+            
+              <option value="255" >
+                C0002 — Apex Services
+              </option>
+            
+              <option value="328" >
+                C0075 — Ashfield Consulting
+              </option>
+            
+              <option value="339" >
+                C0086 — Atlas PLC
+              </option>
+            
+              <option value="347" >
+                C0094 — Aurora Services
+              </option>
+            
+              <option value="331" >
+                C0078 — Beacon Services
+              </option>
+            
+              <option value="289" >
+                C0036 — Blackrock Holdings
+              </option>
+            
+              <option value="296" >
+                C0043 — Blackrock Logistics
+              </option>
+            
+              <option value="293" >
+                C0040 — Cedar LLP
+              </option>
+            
+              <option value="299" >
+                C0046 — Cedar Manufacturing
+              </option>
+            
+              <option value="262" >
+                C0009 — Clearwater PLC
+              </option>
+            
+              <option value="321" >
+                C0068 — Clearwater PLC
+              </option>
+            
+              <option value="283" >
+                C0030 — Cobalt Enterprises
+              </option>
+            
+              <option value="274" >
+                C0021 — Cobalt PLC
+              </option>
+            
+              <option value="352" >
+                C0099 — Copperfield Enterprises
+              </option>
+            
+              <option value="279" >
+                C0026 — Copperfield Ltd
+              </option>
+            
+              <option value="304" >
+                C0051 — Copperfield Manufacturing
+              </option>
+            
+              <option value="334" >
+                C0081 — Crown Consulting
+              </option>
+            
+              <option value="327" >
+                C0074 — Eastgate Consulting
+              </option>
+            
+              <option value="303" >
+                C0050 — Eastgate Logistics
+              </option>
+            
+              <option value="273" >
+                C0020 — Elm Ltd
+              </option>
+            
+              <option value="284" >
+                C0031 — Elm Ltd
+              </option>
+            
+              <option value="278" >
+                C0025 — Elm Services
+              </option>
+            
+              <option value="301" >
+                C0048 — Evergreen Consulting
+              </option>
+            
+              <option value="263" >
+                C0010 — Evergreen Logistics
+              </option>
+            
+              <option value="340" >
+                C0087 — Fairview PLC
+              </option>
+            
+              <option value="286" >
+                C0033 — Falcon Ltd
+              </option>
+            
+              <option value="348" >
+                C0095 — Forge Ltd
+              </option>
+            
+              <option value="333" >
+                C0080 — Granite Manufacturing
+              </option>
+            
+              <option value="260" >
+                C0007 — Harbor Consulting
+              </option>
+            
+              <option value="277" >
+                C0024 — Harbor Holdings
+              </option>
+            
+              <option value="308" >
+                C0055 — Harbor Logistics
+              </option>
+            
+              <option value="330" >
+                C0077 — Harbor Logistics
+              </option>
+            
+              <option value="295" >
+                C0042 — Highland Holdings
+              </option>
+            
+              <option value="338" >
+                C0085 — Horizon Group
+              </option>
+            
+              <option value="335" >
+                C0082 — Horizon Logistics
+              </option>
+            
+              <option value="300" >
+                C0047 — Horizon PLC
+              </option>
+            
+              <option value="294" >
+                C0041 — Ironclad Manufacturing
+              </option>
+            
+              <option value="341" >
+                C0088 — Keystone Enterprises
+              </option>
+            
+              <option value="306" >
+                C0053 — Keystone Holdings
+              </option>
+            
+              <option value="268" >
+                C0015 — Keystone LLP
+              </option>
+            
+              <option value="305" >
+                C0052 — Keystone Services
+              </option>
+            
+              <option value="318" >
+                C0065 — Kingsford Enterprises
+              </option>
+            
+              <option value="311" >
+                C0058 — Lighthouse Group
+              </option>
+            
+              <option value="259" >
+                C0006 — Lighthouse Holdings
+              </option>
+            
+              <option value="256" >
+                C0003 — Lighthouse Ltd
+              </option>
+            
+              <option value="345" >
+                C0092 — Lighthouse PLC
+              </option>
+            
+              <option value="337" >
+                C0084 — Maple Group
+              </option>
+            
+              <option value="264" >
+                C0011 — Monarch Enterprises
+              </option>
+            
+              <option value="332" >
+                C0079 — Monarch Group
+              </option>
+            
+              <option value="323" >
+                C0070 — Monarch Logistics
+              </option>
+            
+              <option value="287" >
+                C0034 — Monarch Ltd
+              </option>
+            
+              <option value="288" >
+                C0035 — Nimbus Group
+              </option>
+            
+              <option value="292" >
+                C0039 — Nimbus Holdings
+              </option>
+            
+              <option value="302" >
+                C0049 — NorthStar Consulting
+              </option>
+            
+              <option value="298" >
+                C0045 — NorthStar LLP
+              </option>
+            
+              <option value="282" >
+                C0029 — Nova Consulting
+              </option>
+            
+              <option value="312" >
+                C0059 — Nova PLC
+              </option>
+            
+              <option value="270" >
+                C0017 — Oakridge Consulting
+              </option>
+            
+              <option value="351" >
+                C0098 — Oakridge Group
+              </option>
+            
+              <option value="315" >
+                C0062 — Oakridge Manufacturing
+              </option>
+            
+              <option value="320" >
+                C0067 — Oakridge Services
+              </option>
+            
+              <option value="290" >
+                C0037 — Orion Holdings
+              </option>
+            
+              <option value="344" >
+                C0091 — Orion Logistics
+              </option>
+            
+              <option value="271" >
+                C0018 — Orion Ltd
+              </option>
+            
+              <option value="343" >
+                C0090 — Paragon PLC
+              </option>
+            
+              <option value="313" >
+                C0060 — Paragon PLC
+              </option>
+            
+              <option value="272" >
+                C0019 — Parkside Group
+              </option>
+            
+              <option value="265" >
+                C0012 — Parkside Manufacturing
+              </option>
+            
+              <option value="342" >
+                C0089 — Quantum Enterprises
+              </option>
+            
+              <option value="314" >
+                C0061 — Quantum Group
+              </option>
+            
+              <option value="269" >
+                C0016 — Quantum Holdings
+              </option>
+            
+              <option value="276" >
+                C0023 — Quantum LLP
+              </option>
+            
+              <option value="285" >
+                C0032 — Quantum Manufacturing
+              </option>
+            
+              <option value="254" >
+                C0001 — Quantum PLC
+              </option>
+            
+              <option value="291" >
+                C0038 — Redwood Group
+              </option>
+            
+              <option value="350" >
+                C0097 — Redwood LLP
+              </option>
+            
+              <option value="309" >
+                C0056 — Riverton Consulting
+              </option>
+            
+              <option value="316" >
+                C0063 — Riverton Logistics
+              </option>
+            
+              <option value="266" >
+                C0013 — Seabrook Enterprises
+              </option>
+            
+              <option value="326" >
+                C0073 — Seabrook Ltd
+              </option>
+            
+              <option value="275" >
+                C0022 — Seabrook Ltd
+              </option>
+            
+              <option value="317" >
+                C0064 — Silverline Consulting
+              </option>
+            
+              <option value="297" >
+                C0044 — Silverline Holdings
+              </option>
+            
+              <option value="325" >
+                C0072 — Silverline LLP
+              </option>
+            
+              <option value="310" >
+                C0057 — SpringVale Holdings
+              </option>
+            
+              <option value="280" >
+                C0027 — SpringVale Ltd
+              </option>
+            
+              <option value="261" >
+                C0008 — SpringVale Manufacturing
+              </option>
+            
+              <option value="307" >
+                C0054 — Sterling Consulting
+              </option>
+            
+              <option value="324" >
+                C0071 — Sterling Logistics
+              </option>
+            
+              <option value="329" >
+                C0076 — Summit Logistics
+              </option>
+            
+              <option value="353" >
+                C0100 — Summit PLC
+              </option>
+            
+              <option value="258" >
+                C0005 — Vanguard Consulting
+              </option>
+            
+              <option value="267" >
+                C0014 — Vanguard Ltd
+              </option>
+            
+              <option value="346" >
+                C0093 — Vanguard Manufacturing
+              </option>
+            
+              <option value="322" >
+                C0069 — Vertex Logistics
+              </option>
+            
+              <option value="336" >
+                C0083 — Vertex Manufacturing
+              </option>
+            
+              <option value="349" >
+                C0096 — Vertex Manufacturing
+              </option>
+            
+              <option value="257" >
+                C0004 — Westport Consulting
+              </option>
+            
+              <option value="319" >
+                C0066 — Westport Services
+              </option>
+            
+              <option value="281" >
+                C0028 — Whitehaven Enterprises
+              </option>
+            
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Matter</label>
+          <select name="matter" id="id_ledger_matter" class="form-select">
+            <option value="">— Any —</option>
+            
+              <option value="201" >
+                M0001 — Financial audit support
+              </option>
+            
+              <option value="202" >
+                M0002 — Trademark registration
+              </option>
+            
+              <option value="203" >
+                M0003 — Employment dispute
+              </option>
+            
+              <option value="204" >
+                M0004 — Breach of contract claim
+              </option>
+            
+              <option value="205" >
+                M0005 — Compliance review
+              </option>
+            
+              <option value="206" >
+                M0006 — Mergers and acquisitions
+              </option>
+            
+              <option value="207" >
+                M0007 — Breach of contract claim
+              </option>
+            
+              <option value="208" >
+                M0008 — Employment dispute
+              </option>
+            
+              <option value="209" >
+                M0009 — Lease agreement
+              </option>
+            
+              <option value="210" >
+                M0010 — Debt recovery
+              </option>
+            
+              <option value="211" >
+                M0011 — Mergers and acquisitions
+              </option>
+            
+              <option value="212" >
+                M0012 — Client onboarding
+              </option>
+            
+              <option value="213" >
+                M0013 — Supplier agreement
+              </option>
+            
+              <option value="214" >
+                M0014 — Debt recovery
+              </option>
+            
+              <option value="215" >
+                M0015 — Property acquisition
+              </option>
+            
+              <option value="216" >
+                M0016 — Property acquisition
+              </option>
+            
+              <option value="217" >
+                M0017 — Breach of contract claim
+              </option>
+            
+              <option value="218" >
+                M0018 — Litigation support
+              </option>
+            
+              <option value="219" >
+                M0019 — Data protection review
+              </option>
+            
+              <option value="220" >
+                M0020 — Property acquisition
+              </option>
+            
+              <option value="221" >
+                M0021 — Joint venture setup
+              </option>
+            
+              <option value="222" >
+                M0022 — Property acquisition
+              </option>
+            
+              <option value="223" >
+                M0023 — Property acquisition
+              </option>
+            
+              <option value="224" >
+                M0024 — Supplier agreement
+              </option>
+            
+              <option value="225" >
+                M0025 — Property acquisition
+              </option>
+            
+              <option value="226" >
+                M0026 — Data protection review
+              </option>
+            
+              <option value="227" >
+                M0027 — Trademark registration
+              </option>
+            
+              <option value="228" >
+                M0028 — Joint venture setup
+              </option>
+            
+              <option value="229" >
+                M0029 — Regulatory appeal
+              </option>
+            
+              <option value="230" >
+                M0030 — Litigation support
+              </option>
+            
+              <option value="231" >
+                M0031 — Supplier agreement
+              </option>
+            
+              <option value="232" >
+                M0032 — Litigation support
+              </option>
+            
+              <option value="233" >
+                M0033 — Corporate filing
+              </option>
+            
+              <option value="234" >
+                M0034 — Breach of contract claim
+              </option>
+            
+              <option value="235" >
+                M0035 — Data protection review
+              </option>
+            
+              <option value="236" >
+                M0036 — Joint venture setup
+              </option>
+            
+              <option value="237" >
+                M0037 — Mergers and acquisitions
+              </option>
+            
+              <option value="238" >
+                M0038 — Financial audit support
+              </option>
+            
+              <option value="239" >
+                M0039 — Regulatory appeal
+              </option>
+            
+              <option value="240" >
+                M0040 — Data protection review
+              </option>
+            
+              <option value="241" >
+                M0041 — Company restructuring
+              </option>
+            
+              <option value="242" >
+                M0042 — Client onboarding
+              </option>
+            
+              <option value="243" >
+                M0043 — Tax planning
+              </option>
+            
+              <option value="244" >
+                M0044 — Corporate filing
+              </option>
+            
+              <option value="245" >
+                M0045 — Joint venture setup
+              </option>
+            
+              <option value="246" >
+                M0046 — Corporate filing
+              </option>
+            
+              <option value="247" >
+                M0047 — Tax planning
+              </option>
+            
+              <option value="248" >
+                M0048 — Arbitration case
+              </option>
+            
+              <option value="249" >
+                M0049 — Employment dispute
+              </option>
+            
+              <option value="250" >
+                M0050 — Client onboarding
+              </option>
+            
+              <option value="251" >
+                M0051 — Financial audit support
+              </option>
+            
+              <option value="252" >
+                M0052 — Property acquisition
+              </option>
+            
+              <option value="253" >
+                M0053 — Arbitration case
+              </option>
+            
+              <option value="254" >
+                M0054 — Client onboarding
+              </option>
+            
+              <option value="255" >
+                M0055 — Joint venture setup
+              </option>
+            
+              <option value="256" >
+                M0056 — Financial audit support
+              </option>
+            
+              <option value="257" >
+                M0057 — Compliance review
+              </option>
+            
+              <option value="258" >
+                M0058 — Company restructuring
+              </option>
+            
+              <option value="259" >
+                M0059 — Tax planning
+              </option>
+            
+              <option value="260" >
+                M0060 — Joint venture setup
+              </option>
+            
+              <option value="261" >
+                M0061 — Property acquisition
+              </option>
+            
+              <option value="262" >
+                M0062 — Breach of contract claim
+              </option>
+            
+              <option value="263" >
+                M0063 — Financial audit support
+              </option>
+            
+              <option value="264" >
+                M0064 — Compliance review
+              </option>
+            
+              <option value="265" >
+                M0065 — Client onboarding
+              </option>
+            
+              <option value="266" >
+                M0066 — Compliance review
+              </option>
+            
+              <option value="267" >
+                M0067 — Litigation support
+              </option>
+            
+              <option value="268" >
+                M0068 — Client onboarding
+              </option>
+            
+              <option value="269" >
+                M0069 — Compliance review
+              </option>
+            
+              <option value="270" >
+                M0070 — Property acquisition
+              </option>
+            
+              <option value="271" >
+                M0071 — Breach of contract claim
+              </option>
+            
+              <option value="272" >
+                M0072 — Litigation support
+              </option>
+            
+              <option value="273" >
+                M0073 — Company restructuring
+              </option>
+            
+              <option value="274" >
+                M0074 — Contract negotiation
+              </option>
+            
+              <option value="275" >
+                M0075 — Tax planning
+              </option>
+            
+              <option value="276" >
+                M0076 — Regulatory appeal
+              </option>
+            
+              <option value="277" >
+                M0077 — Employment dispute
+              </option>
+            
+              <option value="278" >
+                M0078 — Trademark registration
+              </option>
+            
+              <option value="279" >
+                M0079 — Breach of contract claim
+              </option>
+            
+              <option value="280" >
+                M0080 — Debt recovery
+              </option>
+            
+              <option value="281" >
+                M0081 — Company restructuring
+              </option>
+            
+              <option value="282" >
+                M0082 — Client onboarding
+              </option>
+            
+              <option value="283" >
+                M0083 — Compliance review
+              </option>
+            
+              <option value="284" >
+                M0084 — Employment dispute
+              </option>
+            
+              <option value="285" >
+                M0085 — Tax planning
+              </option>
+            
+              <option value="286" >
+                M0086 — Data protection review
+              </option>
+            
+              <option value="287" >
+                M0087 — Tax planning
+              </option>
+            
+              <option value="288" >
+                M0088 — Corporate filing
+              </option>
+            
+              <option value="289" >
+                M0089 — Supplier agreement
+              </option>
+            
+              <option value="290" >
+                M0090 — Debt recovery
+              </option>
+            
+              <option value="291" >
+                M0091 — Joint venture setup
+              </option>
+            
+              <option value="292" >
+                M0092 — Compliance review
+              </option>
+            
+              <option value="293" >
+                M0093 — Joint venture setup
+              </option>
+            
+              <option value="294" >
+                M0094 — Arbitration case
+              </option>
+            
+              <option value="295" >
+                M0095 — Property acquisition
+              </option>
+            
+              <option value="296" >
+                M0096 — Tax planning
+              </option>
+            
+              <option value="297" >
+                M0097 — Supplier agreement
+              </option>
+            
+              <option value="298" >
+                M0098 — Data protection review
+              </option>
+            
+              <option value="299" >
+                M0099 — Breach of contract claim
+              </option>
+            
+              <option value="300" >
+                M0100 — Breach of contract claim
+              </option>
+            
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">— Any —</option>
+            <option value="draft"  >Draft</option>
+            <option value="posted" >Posted</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">From</label>
+          <input type="date" name="date_from" value="" class="form-control">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">To</label>
+          <input type="date" name="date_to" value="" class="form-control">
+        </div>
+      </div>
+
+      <div class="mt-3 d-flex gap-2">
+        <button class="btn btn-primary">Filter</button>
+        <a class="btn btn-outline-secondary" href="/view_invoice.html">Clear</a>
+      </div>
+    </div>
+  </form>
+
+  <!-- Results -->
+  
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Client</th>
+            <th>Matter</th>
+            <th class="text-end">Subtotal</th>
+            <th class="text-end">Tax</th>
+            <th class="text-end">Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/10/">
+                  000009
+                </a>
+              </td>
+              <td>2025-10-27</td>
+              <td>C0004 — Westport Consulting</td>
+              <td>M0004 — Breach of contract claim</td>
+              <td class="text-end">£60.00</td>
+              <td class="text-end">£12.00</td>
+              <td class="text-end fw-semibold">£72.00</td>
+              <td>Draft</td>
+            </tr>
+            
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/9/">
+                  000008
+                </a>
+              </td>
+              <td>2025-10-27</td>
+              <td>C0009 — Clearwater PLC</td>
+              <td>M0028 — Joint venture setup</td>
+              <td class="text-end">£585.00</td>
+              <td class="text-end">£117.00</td>
+              <td class="text-end fw-semibold">£702.00</td>
+              <td>Paid</td>
+            </tr>
+            
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/8/">
+                  000007
+                </a>
+              </td>
+              <td>2025-10-27</td>
+              <td>C0004 — Westport Consulting</td>
+              <td>M0005 — Compliance review</td>
+              <td class="text-end">£165.00</td>
+              <td class="text-end">£33.00</td>
+              <td class="text-end fw-semibold">£198.00</td>
+              <td>Posted</td>
+            </tr>
+            
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/7/">
+                  000006
+                </a>
+              </td>
+              <td>2025-10-21</td>
+              <td>C0078 — Beacon Services</td>
+              <td>M0031 — Supplier agreement</td>
+              <td class="text-end">£845.00</td>
+              <td class="text-end">£169.00</td>
+              <td class="text-end fw-semibold">£1014.00</td>
+              <td>Draft</td>
+            </tr>
+            
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/6/">
+                  000005
+                </a>
+              </td>
+              <td>2025-10-21</td>
+              <td>C0078 — Beacon Services</td>
+              <td>M0031 — Supplier agreement</td>
+              <td class="text-end">£50.00</td>
+              <td class="text-end">£10.00</td>
+              <td class="text-end fw-semibold">£60.00</td>
+              <td>Draft</td>
+            </tr>
+            
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/5/">
+                  000004
+                </a>
+              </td>
+              <td>2025-10-16</td>
+              <td>C0078 — Beacon Services</td>
+              <td>M0031 — Supplier agreement</td>
+              <td class="text-end">£195.00</td>
+              <td class="text-end">£39.00</td>
+              <td class="text-end fw-semibold">£234.00</td>
+              <td>Draft</td>
+            </tr>
+            
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/3/">
+                  000002
+                </a>
+              </td>
+              <td>2025-10-16</td>
+              <td>C0030 — Cobalt Enterprises</td>
+              <td>M0032 — Litigation support</td>
+              <td class="text-end">£200.00</td>
+              <td class="text-end">£40.00</td>
+              <td class="text-end fw-semibold">£240.00</td>
+              <td>Draft</td>
+            </tr>
+            
+          
+            
+            <tr>
+              <td>
+                <a href="/invoices/2/">
+                  000001
+                </a>
+              </td>
+              <td>2025-10-16</td>
+              <td>C0078 — Beacon Services</td>
+              <td>M0031 — Supplier agreement</td>
+              <td class="text-end">£515.00</td>
+              <td class="text-end">£103.00</td>
+              <td class="text-end fw-semibold">£618.00</td>
+              <td>Posted</td>
+            </tr>
+            
+          
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="4" class="text-end">Page totals:</th>
+            <th class="text-end">£2615.00</th>
+            <th class="text-end">£523.00</th>
+            <th class="text-end">£3138.00</th>
+            <th></th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="mt-3">
+      <ul class="pagination">
+        
+        <li class="page-item disabled"><span class="page-link">Page 1 of 1</span></li>
+        
+      </ul>
+    </nav>
+  
+  </section>
+
+</main>
+
+<footer>
+  
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+  <script>
+  window.appUrls = {
+    ajaxMatterOptions: "/ajax/matter-options/"
+  };
+</script>
+  <script src="/static/js/view_invoice.052976d0b74e.js" defer></script>
+
+
+
+
+</body>
+</html>

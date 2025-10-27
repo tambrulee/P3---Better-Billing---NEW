@@ -148,7 +148,8 @@ class InvoiceForm(forms.ModelForm):
         }
 
     def __init__(self, *args, user=None, **kwargs):
-        """ Initialize form with dynamic filtering of clients and matters based on user. """
+        """ Initialize form with dynamic filtering
+        of clients and matters based on user. """
         super().__init__(*args, **kwargs)
         self._user = user
         me = getattr(user, "personnel_profile", None)

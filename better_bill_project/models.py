@@ -159,7 +159,7 @@ class Personnel(models.Model):
         """Get user IDs of direct report delegates."""
         return self.delegates.exclude(
             user__isnull=True).values_list("user_id", flat=True)
-    
+
  # --- Matter lookup ---
 
 class Matter(models.Model):

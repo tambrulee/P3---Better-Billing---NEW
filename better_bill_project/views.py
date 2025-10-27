@@ -143,7 +143,8 @@ def _is_admin(user, p=None) -> bool:
 # --- Permission checkers for view invoice tab ----
 
 def can_view_invoices_user(user) -> bool:
-    """Only Admin, Billing, Partner, Associate Partner can see invoices (not fee earners)."""
+    """Only Admin, Billing, Partner,
+    Associate Partner can see invoices (not fee earners)."""
     if getattr(user, "is_superuser", False):
         return True
 

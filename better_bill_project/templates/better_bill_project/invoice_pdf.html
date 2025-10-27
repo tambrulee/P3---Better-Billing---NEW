@@ -31,7 +31,7 @@
   <div class="muted">Generated on {{ inv.invoice_date|date:"Y-m-d" }}</div>
 </footer>
 
-<main>
+<section>
   <h2>Invoice {{ inv.number }}</h2>
   <div class="meta">
     <div><strong>Date:</strong> {{ inv.invoice_date|date:"Y-m-d" }}</div>
@@ -99,7 +99,7 @@
     <tr><td>Tax</td><td class="text-end">£{{ tax|floatformat:2 }}</td></tr>
     <tr class="line"><td><strong>Total</strong></td><td class="text-end"><strong>£{{ total|floatformat:2 }}</strong></td></tr>
   </table>
-</main>
+</section>
 {% endblock %}
 
 <!-- Scripts (pulls in bootstrap)-->
