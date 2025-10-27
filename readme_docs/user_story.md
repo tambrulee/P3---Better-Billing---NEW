@@ -1,57 +1,32 @@
 # Better Billing — Permissions & User Stories
 
-This document presents the permissions matrix and user stories for the **Better Billing** project in a README-friendly format.
-
----
-
-## Permissions Matrix
-
-| Feature / Page | Other Fee Earners | Associate Partner | Partner | Billing | Admin |
-|---|---|---|---|---|---|
-| **Index (Dashboard)** | View own unbilled time only | View own + delegates | View own + delegates | View all · no click-through | No access |
-| **Record Time** | Own | Own | Own | No access | No access |
-| **View Time** | Own | Own + delegates | Own + delegates | Read-only | Read-only |
-| **Edit Time** | Own | Own | Own | No access | No access |
-| **Delete Time** | Own | Own | Own | No access | No access |
-| **Create Invoice** | No access | Yes · for self + delegates | Yes · for self + delegates | No access | No access |
-| **Post/Delete Invoice** | No access | No access | No access | Yes | No access |
-| **View Invoice** | No access | Yes | Yes | Yes | No access |
-| **Mark Invoice as Paid** | No access | No access | No access | No access | No access |
-
-> **Notes**  
-> * “Delegates” means users assigned to the partner/associate partner for oversight.  
-> * Billing can **finalise** invoices (post/delete) but not create or edit time.  
-> * Admin is **read-only** for time to support audit; no invoice powers (per current scope).
-
----
-
-## User Stories (As a … I want … so that …)
+## User Stories
 
 ### 1) Dashboard (Index)
-- **As an Other Fee Earner**, I want to view only my own unbilled time so that I can track what remains to bill.  
+- **As an Fee Earner**, I want to view only my own unbilled time so that I can track what remains to bill.  
 - **As an Associate Partner**, I want to view my own and my delegates’ unbilled time so that I can oversee team progress.  
 - **As a Partner**, I want to view my own and my delegates’ unbilled time so that I can plan billing cycles efficiently.  
 - **As a Billing user**, I want to view all dashboard metrics without click-through so that I can monitor overall billing without altering data.
 
 ### 2) Record Time
-- **As an Other Fee Earner**, I want to record my own time so that my billable hours are captured accurately.  
+- **As an Fee Earner**, I want to record my own time so that my billable hours are captured accurately.  
 - **As an Associate Partner**, I want to record my own time so that my work is tracked consistently.  
 - **As a Partner**, I want to record my own time so that my client work is billable and transparent.
 
 ### 3) View Time
-- **As an Other Fee Earner**, I want to view my own recorded time so that I can confirm what has been billed or remains unbilled.  
+- **As an Fee Earner**, I want to view my own recorded time so that I can confirm what has been billed or remains unbilled.  
 - **As an Associate Partner**, I want to view my own and my delegates’ time so that I can ensure all billable work is recorded correctly.  
 - **As a Partner**, I want to review my own and delegates’ time entries so that I can oversee billing readiness and performance.  
 - **As a Billing user**, I want to view all time entries in read-only mode so that I can verify entries before posting invoices.  
 - **As an Admin**, I want to read all time entries so that I can assist in audits and maintain oversight without modifying data.
 
 ### 4) Edit Time
-- **As an Other Fee Earner**, I want to edit my own unbilled time so that I can correct errors before invoicing.  
+- **As an Fee Earner**, I want to edit my own unbilled time so that I can correct errors before invoicing.  
 - **As an Associate Partner**, I want to edit my own unbilled time so that my records remain accurate.  
 - **As a Partner**, I want to edit my own unbilled time so that client invoices reflect correct details.
 
 ### 5) Delete Time
-- **As an Other Fee Earner**, I want to delete my own unbilled time so that I can remove accidental entries.  
+- **As an Fee Earner**, I want to delete my own unbilled time so that I can remove accidental entries.  
 - **As an Associate Partner**, I want to delete my own unbilled time so that I can maintain clean and accurate records.  
 - **As a Partner**, I want to delete my own unbilled time so that unnecessary or duplicated entries are removed before billing.
 
@@ -72,7 +47,7 @@ This document presents the permissions matrix and user stories for the **Better 
 
 ---
 
-## Project Summary – Better Billing
+## User Story Implementation
 
 This section documents how the **core billing workflow** has been implemented in the Better Billing project to meet the outlined user stories.  
 The system enables fee earners to record time and expenses, generate invoices, and give partners a clear overview of WIP (Work In Progress) and billing status.
@@ -122,6 +97,18 @@ The system enables fee earners to record time and expenses, generate invoices, a
 - Posted invoices are read-only; excluded from new drafts.  
 - Totals update in reports.  
 **Achieved:** Approval/posting with proper access control.
+
+### 2.4 Mark Invoice as Paid
+
+**Goal:** Allow billing users to mark invoices as paid once payment has been received.
+**Implementation Details:**
+- “Mark as Paid” button is visible only to users with the Billing role.
+- Action updates the linked Ledger record, setting status="paid".
+- Idempotent logic prevents double payment marking.
+- System messages confirm updates (“Invoice successfully marked as paid”).
+- Once paid, the invoice and its ledger entry become read-only.
+
+**Achieved:** Payment tracking integrated directly into the billing workflow, ensuring clear separation between posting and settlement stages.
 
 ### 3.1 WIP & Invoice Overview
 **Goal:** High-level overview of WIP, drafts, and posted invoices.  
@@ -185,6 +172,21 @@ The system enables fee earners to record time and expenses, generate invoices, a
   - Draft invoices editable; **posted** invoices read-only.  
   - Attempted edits on locked records show a clear warning.
 
----
+## Permissions Matrix
 
-*Generated on:* {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
+| Feature / Page | Fee Earner | Associate Partner | Partner | Billing | Admin |
+|---|---|---|---|---|---|
+| **Index (Dashboard)** | View own unbilled time only | View own + delegates | View own + delegates | View all · no click-through | No access |
+| **Record Time** | Own | Own | Own | No access | No access |
+| **View Time** | Own | Own + delegates | Own + delegates | Read-only | Read-only |
+| **Edit Time** | Own | Own | Own | No access | No access |
+| **Delete Time** | Own | Own | Own | No access | No access |
+| **Create Invoice** | No access | Yes · for self + delegates | Yes · for self + delegates | No access | No access |
+| **Post/Delete Invoice** | No access | No access | No access | Yes | No access |
+| **View Invoice** | No access | Yes | Yes | Yes | No access |
+| **Mark Invoice as Paid** | No access | No access | No access | No access | No access |
+
+> **Notes**  
+> * “Delegates” means users assigned to the partner/associate partner for oversight.  
+> * Billing can **finalise** invoices (post/delete) but not create or edit time.  
+> * Admin is **read-only** for time to support audit; no invoice powers (per current scope).
