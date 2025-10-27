@@ -9,14 +9,14 @@
       matter.innerHTML = await r.text();
       // Preserve selected value if it exists in new list
       const current = "{{ filters.matter }}";
-      if (current) { Array.from(matter.options).forEach(o => { if (o.value === current) o.selected = true; }); }
+      if (current) { Array.from(matter.options).forEach(o => { if (o.value === current) {o.selected = true;} }); }
     }
     if (client) {
       client.addEventListener('change', e => {
         const cid = e.target.value;
-        if (cid) loadMatters(cid);
-        else matter.innerHTML = '<option value="">— Any —</option>';
+        if (cid) {loadMatters(cid);}
+        else {matter.innerHTML = '<option value="">— Any —</option>';}
       });
-      if (client.value) loadMatters(client.value);
+      if (client.value) {loadMatters(client.value);}
     }
   });

@@ -9,29 +9,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const matter = document.getElementById('id_inv_matter');
   const ajaxUrl = window.appUrls.ajaxMatterOptions;
 
-  if (!client || !matter) return;
+  if (!client || !matter) {return;}
 
   const params = new URLSearchParams(window.location.search);
   const currentClient = params.get('client') || '';
   const currentMatter = params.get('matter') || '';
 
   function safeSelectOption(selectEl, value) {
-    if (!value) return;
+    if (!value) {return;}
     try {
       const opt = selectEl.querySelector(`option[value="${CSS.escape(value)}"]`);
-      if (opt) opt.selected = true;
+      if (opt) {opt.selected = true;}
     } catch {
       // CSS.escape may not exist in very old browsers; ignore gracefully
       const opts = [...selectEl.options];
       const found = opts.find(o => o.value === value);
-      if (found) found.selected = true;
+      if (found) {found.selected = true;}
     }
   }
 
   function setURLWithoutReload(clientVal, matterVal) {
     const qs = new URLSearchParams();
-    if (clientVal) qs.set('client', clientVal);
-    if (matterVal) qs.set('matter', matterVal);
+    if (clientVal) {qs.set('client', clientVal);}
+    if (matterVal) {qs.set('matter', matterVal);}
     const newUrl = `${location.pathname}${qs.toString() ? `?${qs}` : ''}`;
     history.replaceState(null, '', newUrl);
   }
@@ -52,11 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
           'Accept': 'text/html'
         }
       });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok) {throw new Error(`HTTP ${r.status}`);}
       const optionsHtml = await r.text();
       matter.innerHTML = optionsHtml || '<option value="">No matters found</option>';
       matter.disabled = false;
-      if (selectValue) safeSelectOption(matter, selectValue);
+      if (selectValue) {safeSelectOption(matter, selectValue);}
     } catch (err) {
       console.error('Failed to load matters:', err);
       matter.innerHTML = '<option value="">Error loading matters</option>';

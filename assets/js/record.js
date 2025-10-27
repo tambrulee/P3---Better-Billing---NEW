@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const matterSelect = document.getElementById('id_matter');
   const ajaxUrl = window.appUrls.ajaxMatterOptions;
 
-  if (!clientSelect || !matterSelect) return;
+  if (!clientSelect || !matterSelect) {return;}
 
   function setLoading() {
     matterSelect.disabled = true;
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadMatters(clientId, preserveValue = '') {
-    if (!clientId) return setEmpty();
+    if (!clientId) {return setEmpty();}
 
     setLoading();
     try {
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Accept': 'text/html'
         }
       });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      if (!resp.ok) {throw new Error(`HTTP ${resp.status}`);}
       const html = await resp.text();
       matterSelect.innerHTML = html || '<option value="">No matters found</option>';
       matterSelect.disabled = false;
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Re-select previously chosen matter if still present
       if (preserveValue) {
         const opt = matterSelect.querySelector(`option[value="${CSS.escape(preserveValue)}"]`);
-        if (opt) opt.selected = true;
+        if (opt) {opt.selected = true;}
       }
     } catch (e) {
       console.error('Failed to load matters:', e);

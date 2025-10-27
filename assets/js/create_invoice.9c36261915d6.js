@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const currentMatter = params.get('matter') || '';
 
   async function loadMatters(cid, selectValue = '') {
-    if (!matter) return;
+    if (!matter) {return;}
     if (!cid) {
       matter.innerHTML = '<option value="">— Select matter —</option>';
       return;
@@ -19,20 +19,20 @@ document.addEventListener('DOMContentLoaded', function() {
     matter.innerHTML = await r.text();
     if (selectValue) {
       const opt = matter.querySelector(`option[value="${CSS.escape(selectValue)}"]`);
-      if (opt) opt.selected = true;
+      if (opt) {opt.selected = true;}
     }
   }
 
   function reloadWith(clientVal, matterVal) {
     const qs = new URLSearchParams();
-    if (clientVal) qs.set('client', clientVal);
-    if (matterVal) qs.set('matter', matterVal);
+    if (clientVal) {qs.set('client', clientVal);}
+    if (matterVal) {qs.set('matter', matterVal);}
     window.location.search = qs.toString();
   }
 
   // Initial populate
   const initialClient = (client && client.value) || currentClient;
-  if (initialClient) loadMatters(initialClient, currentMatter);
+  if (initialClient) {loadMatters(initialClient, currentMatter);}
 
   if (client) {
     client.addEventListener('change', e => {

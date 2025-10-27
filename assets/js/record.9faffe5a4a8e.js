@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     clientSelect.addEventListener('change', (e) => {
       const cid = e.target.value;
-      if (cid) loadMatters(cid);
-      else matterSelect.innerHTML = '<option value="">— Select matter —</option>';
+      if (cid) {loadMatters(cid);}
+      else {matterSelect.innerHTML = '<option value="">— Select matter —</option>';}
     });
 
     // Preload matters if a client is already selected (e.g. after validation errors)
-    if (clientSelect.value) loadMatters(clientSelect.value);
+    if (clientSelect.value) {loadMatters(clientSelect.value);}
   });
