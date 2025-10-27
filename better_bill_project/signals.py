@@ -8,8 +8,11 @@ from .models import TimeEntry, WIP
 
 log = logging.getLogger(__name__)
 
-@receiver(post_save, sender=TimeEntry, dispatch_uid="better_bill_timeentry_post_save")  # pyright: ignore[reportCallIssue]
-def create_or_sync_wip(sender: type[TimeEntry], instance: TimeEntry, created: bool, **kwargs: Any) -> None:
+@receiver(post_save, sender=TimeEntry,
+          dispatch_uid="better_bill_timeentry_post_save")
+def create_or_sync_wip(sender: type[TimeEntry],
+                       instance: TimeEntry,
+                       created: bool, **kwargs: Any) -> None:
     """
     Ensure there's a 1:1 WIP row for each TimeEntry.
     - Create on first save.
@@ -31,7 +34,10 @@ def create_or_sync_wip(sender: type[TimeEntry], instance: TimeEntry, created: bo
                         "status": "unbilled",
                     },
                 )
-                log.info("WIP %s for TE id=%s (created=%s)", getattr(obj, "id", None), instance.id, made)
+                log.info(
+                    "WIP %s for TE id=%s (created=%s)",
+                    getattr(obj, "id", None),
+                    instance.id, made)
                 return
 
             # Updates
@@ -48,12 +54,14 @@ def create_or_sync_wip(sender: type[TimeEntry], instance: TimeEntry, created: bo
                     narrative=instance.narrative,
                     status="unbilled",
                 )
-                log.info("WIP created for legacy TE id=%s -> WIP id=%s", instance.id, wip.id)
+                log.info("WIP created for legacy TE id=%s -> WIP id=%s",
+                         instance.id, wip.id)
                 return
 
             # Don’t mutate billed/written-off items
             if wip.status != "unbilled":
-                log.info("Skip WIP sync for TE id=%s (status=%s)", instance.id, wip.status)
+                log.info("Skip WIP sync for TE id=%s (status=%s)",
+                         instance.id, wip.status)
                 return
 
             changed_fields: list[str] = []
@@ -70,11 +78,13 @@ def create_or_sync_wip(sender: type[TimeEntry], instance: TimeEntry, created: bo
                     changed_fields.append(field)
 
             if changed_fields:
-                # updated_at will auto-bump; include it to be explicit
                 wip.save(update_fields=changed_fields + ["updated_at"])
-                log.info("WIP id=%s synced fields=%s for TE id=%s", wip.id, ", ".join(changed_fields), instance.id)
+                log.info("WIP id=%s synced fields=%s for TE id=%s",
+                         wip.id, ", ".join(changed_fields), instance.id)
         except Exception:
-            log.exception("create_or_sync_wip failed for TE id=%s", getattr(instance, "id", None))
+            log.exception(
+                "create_or_sync_wip failed for TE id=%s",
+                getattr(instance, "id", None))
 
     # Run after the transaction commits (safe with views that use atomic blocks)
     transaction.on_commit(_sync)

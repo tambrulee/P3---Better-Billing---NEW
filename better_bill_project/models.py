@@ -1,3 +1,5 @@
+from django.contrib.auth.models import Permission
+from django.db.models import Q
 from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
@@ -6,8 +8,7 @@ from django.conf import settings
 import traceback
 import logging
 log = logging.getLogger(__name__)
-from django.db.models import Q
-from django.contrib.auth.models import Permission
+
 Permission.objects.filter(codename="post_invoice").exists()
 
 
@@ -16,14 +17,13 @@ class Client(models.Model):
     client_number = models.CharField(max_length=6, unique=True)
     name          = models.CharField(max_length=100)
 
-    # Address fields (normalized)
+    # Address fields (normalised)
     address_line_1 = models.CharField("Address Line 1", max_length=100, blank=True)
     address_line_2 = models.CharField("Address Line 2", max_length=100, blank=True)
     street_name    = models.CharField("Street Name", max_length=100, blank=True)
     city           = models.CharField("City", max_length=100, blank=True)
     county         = models.CharField("County", max_length=100, blank=True)
     postcode       = models.CharField("Postcode", max_length=20, blank=True)
-
     phone          = models.CharField(max_length=50, blank=True)
     contact        = models.CharField(max_length=100, blank=True)
 
@@ -88,8 +88,9 @@ class Personnel(models.Model):
 
     def __str__(self):
         return f"{
-            self.initials} - {self.name} ({self.role.role if self.role_id else '—'})"
-    
+            self.initials} - {self.name} ({
+                self.role.role if self.role_id else '—'})"
+
     def clean(self):
         super().clean()
         if self.line_manager_id:
@@ -120,16 +121,16 @@ class Personnel(models.Model):
             return "billing"
         if "cashier" in r:
             return "cashier"
-        # everything labeled '... - other fee earner' (plus synonyms) ⇒ fee_earner
-        if "other fee earner" in r or r.startswith(("paralegal", "case administrator", "trainee associate")):
+        if "other fee earner" in r or r.startswith(("paralegal",
+        "case administrator", "trainee associate")):
             return "fee_earner"
-        if r == "admin":  # only if you ever add a Role row called Admin
+        if r == "admin":
             return "admin"
         return r  # fallback
 
     # --- booleans used by views/permissions ---
     @property
-    def is_admin(self):             # prefer Django superuser if you don't have an Admin role row
+    def is_admin(self):
         return getattr(self.user, "is_superuser", False) or self._role_key() == "admin"
     @property
     def is_cashier(self):           return self._role_key() == "cashier"
@@ -144,7 +145,9 @@ class Personnel(models.Model):
 
     # Direct reports (single level)
     def delegate_user_ids(self):
-        return self.delegates.exclude(user__isnull=True).values_list("user_id", flat=True)
+        return self.delegates.exclude(
+            user__isnull=True).values_list("user_id", flat=True)
+    
  # --- Matter lookup ---
 
 class Matter(models.Model):
@@ -261,7 +264,7 @@ class WIP(models.Model):
         cid = self.client_id
         mid = self.matter_id
 
-        # Matter ↔ client consistency
+        # Matter client consistency
         if mid and cid and self.matter.client_id != cid:
             errors["matter"] = (
                 "Selected matter does not belong to the chosen client."
@@ -298,6 +301,7 @@ class WIP(models.Model):
             self.hours_worked}h ({
             self.status})"
 
+# --- Invoices and Ledger ---
 
 class Invoice(models.Model):
     number       = models.CharField(max_length=50, unique=True)

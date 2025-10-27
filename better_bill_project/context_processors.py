@@ -45,7 +45,8 @@ def caps(request):
     user = getattr(request, "user", None)
     can_view = False
     if user and user.is_authenticated:
-        can_view = user.is_superuser or user.has_perm(PERM_VIEW_INV) or _scope_can_view(user)
+        can_view = user.is_superuser or user.has_perm(
+            PERM_VIEW_INV) or _scope_can_view(user)
     return {"can_view_invoices": can_view}
 
 

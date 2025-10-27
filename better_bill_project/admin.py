@@ -24,7 +24,6 @@ class ClientResource(resources.ModelResource):
 
 
 class PersonnelResource(resources.ModelResource):
-    # Map FK by Role.role (name) instead of ID for import/export
     role = fields.Field(
         column_name="role",
         attribute="role",
@@ -92,7 +91,6 @@ class TimeEntryResource(resources.ModelResource):
             "hours_worked", "total_amount", "activity_code",
             "narrative", "created_at"
         )
-        # Add import_id_fields if you later define a natural key
 
 
 # --- Admin registrations ---
@@ -117,14 +115,14 @@ class ClientAdmin(ImportExportModelAdmin):
         "phone", "contact",
     )
 
-
-
 @admin.register(Personnel)
 class PersonnelAdmin(ImportExportModelAdmin):
     resource_class = PersonnelResource
-    list_display = ("initials", "name", "role", "rate_display", "line_manager", "is_admin", "is_billing")
+    list_display = ("initials", "name", "role", "rate_display",
+                    "line_manager", "is_admin", "is_billing")
     list_select_related = ("role",)
-    search_fields = ("initials", "name", "role__role","line_manager", "user__username", "user__email")  # note the double underscore
+    search_fields = ("initials", "name", "role__role",
+                     "line_manager", "user__username", "user__email")
     autocomplete_fields = ["user", "role", "line_manager"]
     def rate_display(self, obj):
         """ Display the rate from the related Role model. """

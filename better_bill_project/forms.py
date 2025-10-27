@@ -10,19 +10,22 @@ from django.contrib.auth.forms import AuthenticationForm
 class TimeEntryForm(forms.ModelForm):
     # helper field ONLY for filtering the matters list
     client = forms.ModelChoiceField(
-        queryset=Client.objects.order_by("name"),  # this will be overridden in __init__
+        queryset=Client.objects.order_by("name"),
         required=True,
         widget=forms.Select(attrs={"class": "form-select"})
     )
 
     class Meta:
         model = TimeEntry
-        fields = ["client", "matter", "fee_earner", "activity_code", "hours_worked", "narrative"]
+        fields = [
+            "client", "matter", "fee_earner",
+            "activity_code", "hours_worked", "narrative"]
         widgets = {
             "matter": forms.Select(attrs={"class": "form-select"}),
             "fee_earner": forms.Select(attrs={"class": "form-select"}),
             "activity_code": forms.Select(attrs={"class": "form-select"}),
-            "hours_worked": forms.NumberInput(attrs={"class": "form-control", "step": "0.1", "min": "0"}),
+            "hours_worked": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.1", "min": "0"}),
             "narrative": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
 
@@ -32,7 +35,8 @@ class TimeEntryForm(forms.ModelForm):
         # keep a handle to the user for save()
         self._user = user
         me = getattr(user, "personnel_profile", None)
-        is_partner = bool(user and (user.has_perm("better_bill_project.post_invoice") or user.is_superuser))
+        is_partner = bool(user and (user.has_perm(
+            "better_bill_project.post_invoice") or user.is_superuser))
 
         # ----- default fee_earner to current user -----
         if me:
@@ -43,14 +47,15 @@ class TimeEntryForm(forms.ModelForm):
             self.fields["fee_earner"].queryset = Personnel.objects.filter(pk=me.pk)
             self.fields["fee_earner"].empty_label = None  # no blank option
 
-        # ===== INSERTED: Clients with at least one OPEN matter =====
+        # Clients with at least one OPEN matter
         open_client_ids = (
             Matter.objects
             .filter(closed_at__isnull=True)
             .values_list("client_id", flat=True)
             .distinct()
         )
-        clients_with_open_matters = Client.objects.filter(id__in=open_client_ids).order_by("name")
+        clients_with_open_matters = Client.objects.filter(
+            id__in=open_client_ids).order_by("name")
 
         # if editing an instance whose client has no open matters, still include it
         inst_client_id = getattr(getattr(self.instance, "client", None), "id", None)
@@ -60,7 +65,6 @@ class TimeEntryForm(forms.ModelForm):
             ).order_by("name")
 
         self.fields["client"].queryset = clients_with_open_matters
-        # ===== END INSERTED =====
 
         # ----- existing matter narrowing logic -----
         cid = None
@@ -87,8 +91,9 @@ class TimeEntryForm(forms.ModelForm):
         client = cleaned.get("client")
         matter = cleaned.get("matter")
         if client and matter and matter.client_id != client.id:
-            self.add_error("matter", "Selected matter does not belong to the chosen client.")
-        # (optional hardening) also block closed matters if ever posted by hand
+            self.add_error(
+                "matter", "Selected matter does not belong to the chosen client.")
+        # Also ensure matter is not closed
         if matter and matter.closed_at is not None:
             self.add_error("matter", "This matter is closed and cannot be selected.")
         return cleaned
@@ -111,7 +116,8 @@ class TimeEntryForm(forms.ModelForm):
         obj = super().save(commit=False)
         user = getattr(self, "_user", None)
         me = getattr(user, "personnel_profile", None)
-        is_partner = bool(user and (user.has_perm("better_bill_project.post_invoice") or user.is_superuser))
+        is_partner = bool(user and (
+            user.has_perm("better_bill_project.post_invoice") or user.is_superuser))
         if me and not is_partner:
             obj.fee_earner = me
         if commit:
@@ -124,15 +130,20 @@ class TimeEntryForm(forms.ModelForm):
 class InvoiceForm(forms.ModelForm):
     matter = forms.ModelChoiceField(
         queryset=Matter.objects.none(),
-        widget=forms.Select(attrs={"class": "form-select", "id": "id_inv_matter", "required": True})
+        widget=forms.Select(
+            attrs={"class": "form-select", "id": "id_inv_matter", "required": True})
     )
 
     class Meta:
         model = Invoice
         fields = ["client", "matter", "notes"]
         widgets = {
-            "client": forms.Select(attrs={"id": "id_inv_client", "class": "form-select", "required": True}),
-            "matter": forms.Select(attrs={"id": "id_inv_matter", "class": "form-select", "required": True}),
+            "client": forms.Select(
+                attrs={"id": "id_inv_client",
+                       "class": "form-select", "required": True}),
+            "matter": forms.Select(
+                attrs={"id": "id_inv_matter",
+                       "class": "form-select", "required": True}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
@@ -144,17 +155,18 @@ class InvoiceForm(forms.ModelForm):
         if me:
             my_open_matters = Matter.objects.filter(
                 closed_at__isnull=True,
-                lead_fee_earner=me,   # <- change if your field is named differently
+                lead_fee_earner=me,
             )
             client_ids = my_open_matters.values_list("client_id", flat=True).distinct()
             clients_qs = Client.objects.filter(id__in=client_ids).order_by("name")
 
-            # If editing an existing invoice whose client falls outside (edge case), include it to render
             inst_client_id = getattr(self.instance, "client_id", None)
             if inst_client_id and inst_client_id not in client_ids:
-                clients_qs = (Client.objects.filter(id=inst_client_id) | clients_qs).order_by("name")
+                clients_qs = (
+                    Client.objects.filter(
+                        id=inst_client_id) | clients_qs).order_by("name")
         else:
-            # No personnel profile: show nothing (safer default)
+
             clients_qs = Client.objects.none()
 
         self.fields["client"].queryset = clients_qs
@@ -176,10 +188,11 @@ class InvoiceForm(forms.ModelForm):
             matters_qs = Matter.objects.filter(
                 client_id=cid,
                 closed_at__isnull=True,
-                lead_fee_earner=me,  # <- change if needed
+                lead_fee_earner=me,
             )
 
-            # Include instance matter (e.g., when re-editing an older invoice) so the form can render
+            # Include instance matter (e.g.,
+            # when re-editing an older invoice) so the form can render
             inst_matter_id = getattr(self.instance, "matter_id", None)
             if inst_matter_id and not matters_qs.filter(pk=inst_matter_id).exists():
                 matters_qs = Matter.objects.filter(pk=inst_matter_id) | matters_qs
@@ -195,7 +208,8 @@ class InvoiceForm(forms.ModelForm):
         me = getattr(getattr(self, "_user", None), "personnel_profile", None)
 
         if client and matter and matter.client_id != client.id:
-            self.add_error("matter", "Selected matter does not belong to the chosen client.")
+            self.add_error("matter",
+                        "Selected matter does not belong to the chosen client.")
 
         # Enforce: must be led by current user (regardless of partner status)
         if matter and me and matter.lead_fee_earner_id != me.id:

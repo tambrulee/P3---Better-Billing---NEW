@@ -12,35 +12,61 @@ from django.contrib import messages # for user messages
 from django.urls import reverse # for URL reversing
 from django.template.loader import render_to_string # for rendering templates to strings
 from .forms import TimeEntryForm, InvoiceForm, TimeEntryQuickEditForm # custom forms
-from .models import TimeEntry, Client, Matter, Invoice, ALLOWED_MANAGER_ROLES
+from .models import TimeEntry, Client, Matter, ALLOWED_MANAGER_ROLES
 from .models import WIP, Invoice, InvoiceLine, Ledger, Personnel, ActivityCode
-from django.db.models import Q, Exists, OuterRef # for complex queries
+from django.db.models import Exists, OuterRef # for complex queries
 from django.db import transaction # for atomic transactions
-from django.contrib.auth.decorators import login_required, permission_required # for auth decorators
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.http import require_POST # for HTTP method restriction
 from django.contrib.staticfiles import finders # for static file finding
 from urllib.parse import urlparse # for URL parsing
 from xhtml2pdf import pisa # for PDF generation
-from .permissions import Scope # import your permissions class
-
-
-
-# ---- Role helpers (server-side guards) ----
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.core.exceptions import PermissionDenied
 
 def _p(user):
     return getattr(user, "personnel_profile", None)
 
-def is_admin(user):    p=_p(user); return bool(p and p.is_admin) or bool(getattr(user, "is_superuser", False))
-def is_billing(user):  p=_p(user); return bool(p and p.is_billing)
-def is_cashier(user):  p=_p(user); return bool(p and p.is_cashier)
-def is_partner(user):  p=_p(user); return bool(p and p.is_partner)
-def is_assoc(user):    p=_p(user); return bool(p and p.is_associate_partner)
-def is_partner_or_assoc(user): return is_partner(user) or is_assoc(user) or is_admin(user)
-def is_view_invoices(user):    return any([is_admin(user), is_billing(user), is_cashier(user), is_partner(user), is_assoc(user)])
-def is_time_entry_user(user):  return not (is_billing(user) or is_cashier(user)) and _p(user) is not None
+def is_cashier(user):
+    p = _p(user)
+    return bool(p and p.is_cashier)
+
+def is_partner(user):
+    p = _p(user)
+    return bool(p and p.is_partner)
+
+
+def is_assoc(user):
+    p = _p(user)
+    return bool(p and p.is_associate_partner)
+
+
+def is_billing(user):
+    p = _p(user)
+    return bool(p and p.is_billing)
+
+
+def is_partner_or_assoc(user):
+    # Partner or Associate Partner only (Admin excluded)
+    return is_partner(user) or is_assoc(user)
+
+
+def is_view_invoices(user):
+    # Associate Partner, Partner, or Billing (Admin excluded)
+    return any((
+        is_partner(user),
+        is_assoc(user),
+        is_billing(user),
+    ))
+
+def is_time_entry_user(user) -> bool:
+    """Allowed to log time = not billing and not cashier."""
+    p = _personnel(user)
+    if not p:
+        return False
+    rn = _role_name(p)
+    is_cashier = "cashier" in rn
+    return (not _is_billing(p)) and (not is_cashier)
 
 # --- Permission strings ---
 APP_LABEL = Invoice._meta.app_label
@@ -79,7 +105,8 @@ def _role_name(p) -> str:
 
 def _is_billing(p) -> bool:
     rn = _role_name(p)
-    return rn == "billing administrator" or "billing" in rn or rn in {"accounts", "finance"}
+    return rn == "billing administrator" or "billing" in rn or rn in {
+        "accounts", "finance"}
 
 def _is_partner(p) -> bool:
     return _role_name(p) == "partner"
@@ -91,13 +118,15 @@ def _is_admin(user, p=None) -> bool:
     # Treat Django superuser as admin
     return bool(getattr(user, "is_superuser", False))
 
+
 # --- Replace your can_view_invoices_user with this ---
 def can_view_invoices_user(user) -> bool:
     """
     Return True for:
     - superuser
     - explicit Django permission
-    - Personnel boolean flags (is_admin / is_billing / is_cashier / is_partner / is_associate_partner)
+    - Personnel boolean flags (is_admin / is_billing /
+    is_cashier / is_partner / is_associate_partner)
     - role name strings that include 'billing' etc. (tolerant)
     """
     if getattr(user, "is_superuser", False):
@@ -140,10 +169,13 @@ MANAGER_KEYWORDS = {"partner", "associate partner"}
 def _effective_flags(user):
     """
     Returns flags dict:
-      - can_view_invoices: True for superuser, users with view perm, Personnel boolean flags,
-                           or role names containing billing/manager keywords.
-      - can_log_time: False for billing/cashier; True otherwise (if Personnel exists).
-    Works even if your Personnel booleans aren't set, by falling back to role name keywords.
+      - can_view_invoices:
+      True for superuser, users with view perm, Personnel boolean flags,
+      or role names containing billing/manager keywords.
+      - can_log_time: False for billing/cashier;
+      True otherwise (if Personnel exists).
+      Works even if your Personnel booleans aren't set,
+      by falling back to role name keywords.
     """
     flags = {"can_view_invoices": False, "can_log_time": False}
     if not getattr(user, "is_authenticated", False):
@@ -193,15 +225,6 @@ def _effective_flags(user):
     flags["can_log_time"] = bool(can_log)
     return flags
 
-
-def is_time_entry_user(user) -> bool:
-    """Allowed to log time = not billing and not cashier."""
-    p = _personnel(user)
-    if not p:
-        return False
-    rn = _role_name(p)
-    is_cashier = "cashier" in rn
-    return (not _is_billing(p)) and (not is_cashier)
 
 def _team_personnel_ids(me: Personnel | None):
     """
