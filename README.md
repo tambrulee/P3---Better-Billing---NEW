@@ -92,16 +92,6 @@ Currently, the app assumes access to internal databases for **Matters**, **Perso
 
 ---
 
-## 🚀 Deployment
-- #### [Heroku Configuration](/readme_docs/heroku.md)
-
----
-
-## 🔐 Security
-- #### [Repository Management](/readme_docs/git.md)
-
----
-
 ## 🧯 Issues & Fixes
 - #### [Bugs & Fixes](/readme_docs/bugs.md)
 
