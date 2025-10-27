@@ -37,7 +37,12 @@ This ensures a clear, auditable trail from recorded time through to payment, in 
 
 ### **Frontend**
 - **Bootstrap 5** used for layout, responsiveness, and consistent styling.  
-- Accessibility compliance achieved with semantic HTML, ARIA labels, and strong colour contrast.  
+- Accessibility compliance achieved with semantic HTML, ARIA labels, and strong colour contrast.
+[Lighthouse testing - Home](/readme_docs/lighthouse/index_lh.png)  
+[Lighthouse testing - Post Invoice](/readme_docs/lighthouse/post_in_lh.png)  
+[Lighthouse testing - Create Invoice](/readme_docs/lighthouse/create_in_lh.png)  
+[Lighthouse testing - Record Time](/readme_docs/lighthouse/record_lh.png)
+[Lighthouse testing - View Invoice](/readme_docs/lighthouse/view_inv_lh.png)  
 - UX designed for clarity and minimal friction — entering time or generating invoices takes only a few steps.
 
 ### **Backend**
