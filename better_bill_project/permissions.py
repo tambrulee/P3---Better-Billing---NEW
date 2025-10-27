@@ -12,10 +12,9 @@ class Scope:
             ids += list(self.p.delegate_user_ids())
         return ids
 
-    # capability checks (unchanged in meaning)
     def can_view_invoice(self) -> bool:
         return any([
-            self.p.is_admin, self.p.is_billing, self.p.is_cashier,
+            self.p.is_admin, self.p.is_billing, 
             self.p.is_partner, self.p.is_associate_partner
         ])
 

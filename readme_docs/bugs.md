@@ -61,6 +61,10 @@ Circular Import in Models
 **Cause:** Two models referenced each other directly without deferred string-based model relationships.
 **Resolution:** Replaced direct model imports with string references (e.g., `'app.ModelName'`) and adjusted type hints accordingly.
 
+Existing bugs:
+
+* Inputting incorrect time increments for example 'O.35' causes a 500 error
+
 ### Summary and Lessons Learned
 Throughout the debugging process, systematic testing and documentation proved essential. Each issue reinforced the importance of version control hygiene, modular code organization, and proactive dependency management. By resolving these bugs methodically, the project evolved into a more stable, secure, and maintainable application.
 

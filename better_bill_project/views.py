@@ -61,26 +61,47 @@ def _team_personnel_ids(me: Personnel | None) -> list[int]:
         ids += list(me.delegates.values_list("id", flat=True))
     return ids
 
+# Index
 @login_required
 def index(request):
     me = getattr(request.user, "personnel_profile", None)
+
+    # Base context defaults so the page can always render
+    context = {
+        "wip_items": [],
+        "wip_total_hours": Decimal("0.0"),
+        "draft_invoices": [],
+        "draft_subtotal": Decimal("0.00"),
+        "draft_tax":      Decimal("0.00"),
+        "draft_total":    Decimal("0.00"),
+        "posted_invoices": [],
+        "post_subtotal":  Decimal("0.00"),
+        "post_tax":       Decimal("0.00"),
+        "post_total":     Decimal("0.00"),
+        "can_view_invoices": False,
+    }
+
     if not me:
-        # ... same empty context as before, plus:
-        context["can_view_invoices"] = False
         return render(request, "better_bill_project/index.html", context)
 
     can_view_invoices = Scope(me).can_view_invoice()
+    context["can_view_invoices"] = can_view_invoices
+
     team_ids = _team_personnel_ids(me)
 
     # Unbilled WIP (always)
-    wip_qs = (WIP.objects
-              .select_related("matter", "client")
-              .filter(status="unbilled", fee_earner_id__in=team_ids)
-              .order_by("-created_at"))
-    wip_total_hours = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
+    wip_qs = (
+        WIP.objects
+        .select_related("matter", "client")
+        .filter(status="unbilled", fee_earner_id__in=team_ids)
+        .order_by("-created_at")
+    )
+    context["wip_items"] = list(wip_qs[:10])
+    context["wip_total_hours"] = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
 
     if can_view_invoices:
-        invoice_base = (Invoice.objects
+        invoice_base = (
+            Invoice.objects
             .select_related("client", "matter", "ledger")
             .annotate(has_team_work=Exists(
                 InvoiceLine.objects.filter(
@@ -88,39 +109,36 @@ def index(request):
                     wip__fee_earner_id__in=team_ids
                 )
             ))
-            .filter(has_team_work=True))
+            .filter(has_team_work=True)
+        )
+
         draft_qs  = invoice_base.filter(ledger__status="draft").order_by("-created_at")[:10]
         posted_qs = invoice_base.filter(ledger__status="posted").order_by("-created_at")[:10]
+
         draft_totals = draft_qs.aggregate(subtotal=Sum("ledger__subtotal"),
                                           tax=Sum("ledger__tax"),
                                           total=Sum("ledger__total"))
         post_totals  = posted_qs.aggregate(subtotal=Sum("ledger__subtotal"),
                                            tax=Sum("ledger__tax"),
                                            total=Sum("ledger__total"))
-    else:
-        draft_qs = posted_qs = []
-        draft_totals = post_totals = {"subtotal": Decimal("0.00"),
-                                      "tax": Decimal("0.00"),
-                                      "total": Decimal("0.00")}
 
-    context = {
-        "wip_items": wip_qs[:10],
-        "wip_total_hours": wip_total_hours,
-        "draft_invoices": draft_qs,
-        "draft_subtotal": draft_totals["subtotal"] or Decimal("0.00"),
-        "draft_tax":      draft_totals["tax"]      or Decimal("0.00"),
-        "draft_total":    draft_totals["total"]    or Decimal("0.00"),
-        "posted_invoices": posted_qs,
-        "post_subtotal":  post_totals["subtotal"]  or Decimal("0.00"),
-        "post_tax":       post_totals["tax"]       or Decimal("0.00"),
-        "post_total":     post_totals["total"]     or Decimal("0.00"),
-        "can_view_invoices": can_view_invoices,  # for the template
-    }
+        context.update({
+            "draft_invoices": list(draft_qs),
+            "draft_subtotal": draft_totals["subtotal"] or Decimal("0.00"),
+            "draft_tax":      draft_totals["tax"]      or Decimal("0.00"),
+            "draft_total":    draft_totals["total"]    or Decimal("0.00"),
+            "posted_invoices": list(posted_qs),
+            "post_subtotal":  post_totals["subtotal"]  or Decimal("0.00"),
+            "post_tax":       post_totals["tax"]       or Decimal("0.00"),
+            "post_total":     post_totals["total"]     or Decimal("0.00"),
+        })
+
     return render(request, "better_bill_project/index.html", context)
+
 
 # Time Entry Form
 @login_required
-@user_passes_test(is_time_entry_user, login_url="/accounts/login/")  # redirects if not allowed
+@user_passes_test(is_time_entry_user, login_url="/errors/403.html")  # redirects if not allowed
 def record_time(request):
     """ View for recording time entries and listing recent entries. """
     is_partner = request.user.has_perm(
@@ -206,7 +224,7 @@ def record_time(request):
 
 @login_required
 @require_POST
-@user_passes_test(is_time_entry_user, login_url="/accounts/login/")  # redirects if not allowed
+@user_passes_test(is_time_entry_user, login_url="/errors/403.html")  # redirects if not allowed
 def delete_time_entry(request, pk):
     """ Delete a time entry if unbilled and permitted.
     """
