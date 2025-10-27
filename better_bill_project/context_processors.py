@@ -1,16 +1,10 @@
-from .models import Invoice, Personnel
-from .permissions import Scope
-
-ROLE_BILLING = {"billing administrator", "billing", "accounts", "finance"}
-ROLE_PARTNER = {"partner"}
-ROLE_ASSOC_PARTNER = {"associate partner", "assoc partner", "associate_partner"}
-
-APP_LABEL = Invoice._meta.app_label
-PERM_VIEW_INV = f"{APP_LABEL}.view_invoice"
+# better_bill_project/context_processors.py
+from .models import Personnel
+from .views import can_view_invoices_user, is_time_entry_user
 
 def personnel(request):
     """Add the Personnel profile of the logged-in user to the context."""
-    if not request.user.is_authenticated:
+    if not getattr(request.user, "is_authenticated", False):
         return {"me": None}
     try:
         p = Personnel.objects.select_related("role").get(user=request.user)
@@ -18,41 +12,19 @@ def personnel(request):
         p = None
     return {"me": p}
 
-
-def ui_flags(request):
-    """Add UI flags to the context based on user permissions."""
-    me = getattr(getattr(request, "user", None), "personnel_profile", None)
-    can_view_invoices = False
-    if me:
-        can_view_invoices = Scope(me).can_view_invoice()
-    return {"can_view_invoices": can_view_invoices}
-
-def _personnel(user):
-    """Get Personnel profile for user, or None."""
-    return getattr(user, "personnel_profile", None)
-
-def _role_name(p) -> str:
-    """Get normalised role name from Personnel, or empty string."""
-    return (getattr(getattr(p, "role", None), "role", "") or "").strip().lower()
-
-def _scope_can_view(user) -> bool:
-    """Check if user can view invoices based on their scope."""
-    p = _personnel(user)
-    if not p:
-        return False
-    rn = _role_name(p)
-    is_billing = rn in ROLE_BILLING or ("billing" in rn)
-    is_partner = rn in ROLE_PARTNER
-    is_assoc  = rn in ROLE_ASSOC_PARTNER
-    return any([user.is_superuser, is_billing, is_partner, is_assoc])
-
-def caps(request):
-    """Add capability flags to the context based on user permissions."""
+def global_perms(request):
+    """
+    Global UI flags:
+      - can_view_invoices_nav: controls the Invoices tab in the navbar
+      - can_record_hours_nav: hides 'Record Hours' for admin and billing
+    NOTE: Do NOT return 'can_view_invoices' here; the dashboard already
+          sets a page-scoped 'can_view_invoices' in its context.
+    """
     user = getattr(request, "user", None)
-    can_view = False
-    if user and user.is_authenticated:
-        can_view = user.is_superuser or user.has_perm(
-            PERM_VIEW_INV) or _scope_can_view(user)
-    return {"can_view_invoices": can_view}
+    if not user or not user.is_authenticated:
+        return {"can_view_invoices_nav": False, "can_record_hours_nav": False}
 
-
+    return {
+        "can_view_invoices_nav": can_view_invoices_user(user),
+        "can_record_hours_nav": is_time_entry_user(user),
+    }

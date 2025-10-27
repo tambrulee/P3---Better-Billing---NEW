@@ -69,13 +69,20 @@ def is_view_invoices(user):
     ))
 
 def is_time_entry_user(user) -> bool:
-    """Allowed to log time = not billing and not cashier."""
+    """Allowed to log time = not admin, not billing."""
+    if getattr(user, "is_superuser", False):
+        return False  # admin cannot record hours
     p = _personnel(user)
     if not p:
         return False
-    rn = _role_name(p)
-    is_cashier = "cashier" in rn
-    return (not _is_billing(p)) and (not is_cashier)
+    # treat any 'billing' role as not allowed to record time
+    if _is_billing(p):
+        return False
+    if getattr(p, "is_cashier", False):
+        return False
+    return True
+
+
 
 # --- Permission strings ---
 APP_LABEL = Invoice._meta.app_label
@@ -199,8 +206,9 @@ def _effective_flags(user):
     # Superuser is always allowed
     if getattr(user, "is_superuser", False):
         flags["can_view_invoices"] = True
-        flags["can_log_time"] = True  # superuser can do anything
+        flags["can_log_time"] = False  # admin can’t record hours
         return flags
+
 
     # Permission fallback (keep if you've set perms)
     try:
@@ -389,8 +397,16 @@ def index(request):
                   login_url="/errors/403.html")  # redirects if not allowed
 def record_time(request):
     """ View for recording time entries and listing recent entries. """
-    is_partner = request.user.has_perm(
-        "better_bill_project.post_invoice") or request.user.is_superuser
+    def _is_partner_or_assoc_user(u):
+        if getattr(u, "is_superuser", False):
+            return True
+        p = _personnel(u)
+        if not p:
+            return False
+        return _is_partner(p) or _is_assoc(p)
+
+    is_partner = _is_partner_or_assoc_user(request.user)
+
     fe_filter = request.GET.get("fe")
     personnel_for_user = getattr(
         request.user, "personnel_profile", None)
@@ -402,7 +418,7 @@ def record_time(request):
     if is_partner:
         if fe_filter:
             base_qs = base_qs.filter(fee_earner_id=fe_filter)
-        fee_earners = Personnel.objects.order_by("fee_earner")
+        fee_earners = Personnel.objects.order_by("name")
     else:
         if personnel_for_user:
             base_qs = base_qs.filter(fee_earner=personnel_for_user)
@@ -478,8 +494,16 @@ def delete_time_entry(request, pk):
     """ Delete a time entry if unbilled and permitted.
     """
 
-    is_partner = request.user.has_perm(
-        "better_bill_project.post_invoice") or request.user.is_superuser
+    def _is_partner_or_assoc_user(u):
+        if getattr(u, "is_superuser", False):
+            return True
+        p = _personnel(u)
+        if not p:
+            return False
+        return _is_partner(p) or _is_assoc(p)
+
+    is_partner = _is_partner_or_assoc_user(request.user)
+
     personnel_for_user = getattr(request.user, "personnel_profile", None)
 
     te = get_object_or_404(
@@ -642,8 +666,7 @@ def create_invoice(request):
 
 # View Invoice
 @login_required
-@user_passes_test(can_view_invoices_user, login_url="/accounts/login/")
-@permission_required(PERM_VIEW_INV, raise_exception=True)
+@require_invoice_access
 def view_invoice(request):
     """ List and filter invoices with pagination and totals.
     """
@@ -815,7 +838,7 @@ def post_invoice_view(request):
 
 # Invoice Detail View
 @login_required
-@permission_required(PERM_VIEW_INV, raise_exception=True)
+@require_invoice_access
 def invoice_detail(request, pk):
     """ View details of a single invoice, with billing controls if allowed. """
     inv = get_object_or_404(
@@ -880,7 +903,7 @@ def _xhtml2pdf_link_callback(uri, rel):
 
 # PDF generation view
 @login_required
-@permission_required(PERM_VIEW_INV, raise_exception=True)
+@require_invoice_access
 def invoice_pdf(request, pk):
     """ Render an invoice as PDF and return as HTTP response."""
     inv = get_object_or_404(

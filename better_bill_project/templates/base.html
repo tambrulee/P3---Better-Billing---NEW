@@ -49,13 +49,14 @@
               </li>
 
               <!-- Record Hours — hide from Billing + Cashier -->
-              {% if me and not me.is_billing and not me.is_cashier %}
+              {% if can_record_hours_nav %}
                 <li class="nav-item">
                   <a class="nav-link px-3 py-2 {% if url_name == 'record-time' %}active{% endif %}"
-                     {% if url_name == 'record-time' %}aria-current="page"{% endif %}
-                     href="{% url 'record-time' %}">Record Hours</a>
+                    {% if url_name == 'record-time' %}aria-current="page"{% endif %}
+                    href="{% url 'record-time' %}">Record Hours</a>
                 </li>
               {% endif %}
+
 
               <!-- Create Invoice — Admin OR Partner OR Associate Partner -->
               {% if me %}
@@ -77,13 +78,13 @@
               {% endif %}
 
               <!-- View Invoices -->
-              {# show if either: the view set can_view_invoices OR user has the built-in perm #}
-              {% if can_view_invoices or perms.better_bill_project.view_invoice %}
+              {% if can_view_invoices_nav %}
                 <li class="nav-item">
                   <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
                     href="{% url 'view-invoice' %}">Invoices</a>
                 </li>
               {% endif %}
+
 
             </ul>
 

@@ -103,7 +103,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
                 "better_bill_project.context_processors.personnel",
-                "better_bill_project.context_processors.caps",
+                "better_bill_project.context_processors.global_perms"
             ],
             "builtins": ["django.templatetags.i18n"],
         },
