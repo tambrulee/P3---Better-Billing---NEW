@@ -104,7 +104,7 @@ TEMPLATES = [
                 "better_bill_project.context_processors.personnel",
                 "better_bill_project.context_processors.caps",
             ],
-            "builtins": ["django.templatetags.i18n"],  # <-- enables {% trans %} everywhere
+            "builtins": ["django.templatetags.i18n"],
         },
     },
 ]
@@ -169,7 +169,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = "/static/"
 
 # The build output folder (DON'T edit files here by hand)
-STATIC_ROOT = BASE_DIR / "assets"               
+STATIC_ROOT = BASE_DIR / "assets"
 
 if DEBUG:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"

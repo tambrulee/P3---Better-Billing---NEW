@@ -285,7 +285,9 @@ def index(request):
     # ----- Team scoping -----
     team_ids = _team_personnel_ids(me)  # may be None, [], or [ids]
     # Admin/Billing see everything (clear filter)
-    if getattr(request.user, "is_superuser", False) or any(k in _role_name(me) for k in BILLING_KEYWORDS) or getattr(me, "is_admin", False) or getattr(me, "is_billing", False):
+    if getattr(request.user, "is_superuser", False) or any(
+        k in _role_name(me) for k in BILLING_KEYWORDS) or getattr(
+            me, "is_admin", False) or getattr(me, "is_billing", False):
         team_ids = None
 
     # ----- Unbilled WIP -----
@@ -297,7 +299,8 @@ def index(request):
         wip_qs = wip_qs.filter(fee_earner_id__in=team_ids)
 
     context["wip_items"] = list(wip_qs[:10])
-    context["wip_total_hours"] = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
+    context["wip_total_hours"] = wip_qs.aggregate(
+        total=Sum("hours_worked"))["total"] or Decimal("0.0")
 
     # ----- Invoices (only when allowed) -----
     if context["can_view_invoices"]:
@@ -314,11 +317,17 @@ def index(request):
                 ))
                 .filter(has_team_work=True))
 
-        draft_qs  = invoice_base.filter(ledger__status="draft").order_by("-created_at")[:10]
-        posted_qs = invoice_base.filter(ledger__status="posted").order_by("-created_at")[:10]
+        draft_qs  = invoice_base.filter(
+            ledger__status="draft").order_by("-created_at")[:10]
+        posted_qs = invoice_base.filter(
+            ledger__status="posted").order_by("-created_at")[:10]
 
-        draft_totals = draft_qs.aggregate(subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"))
-        post_totals  = posted_qs.aggregate(subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"))
+        draft_totals = draft_qs.aggregate(
+            subtotal=Sum("ledger__subtotal"),
+            tax=Sum("ledger__tax"), total=Sum("ledger__total"))
+        post_totals  = posted_qs.aggregate(
+            subtotal=Sum("ledger__subtotal"),
+            tax=Sum("ledger__tax"), total=Sum("ledger__total"))
 
         context.update({
             "draft_invoices": list(draft_qs),
@@ -335,7 +344,8 @@ def index(request):
 
 # Time Entry Form
 @login_required
-@user_passes_test(is_time_entry_user, login_url="/errors/403.html")  # redirects if not allowed
+@user_passes_test(is_time_entry_user,
+                  login_url="/errors/403.html")  # redirects if not allowed
 def record_time(request):
     """ View for recording time entries and listing recent entries. """
     is_partner = request.user.has_perm(
@@ -402,7 +412,7 @@ def record_time(request):
             return redirect("record-time")
         else:
             messages.error(request, "Please correct the errors below.")
-        form_qe = None  
+        form_qe = None
     else:
         form = TimeEntryForm(user=request.user)
         form_qe = None
@@ -421,7 +431,8 @@ def record_time(request):
 
 @login_required
 @require_POST
-@user_passes_test(is_time_entry_user, login_url="/errors/403.html")  # redirects if not allowed
+@user_passes_test(is_time_entry_user,
+                  login_url="/errors/403.html")  # redirects if not allowed
 def delete_time_entry(request, pk):
     """ Delete a time entry if unbilled and permitted.
     """
@@ -834,7 +845,8 @@ def invoice_pdf(request, pk):
     inv = get_object_or_404(
         Invoice.objects
         .select_related("client", "matter", "ledger")
-        .prefetch_related("lines", "lines__wip", "lines__wip__fee_earner", "lines__wip__activity_code"),
+        .prefetch_related("lines", "lines__wip",
+                          "lines__wip__fee_earner", "lines__wip__activity_code"),
         pk=pk
     )
 
@@ -845,7 +857,8 @@ def invoice_pdf(request, pk):
 
     html = render_to_string(
         "better_bill_project/invoice_pdf.html",
-        {"inv": inv, "subtotal": subtotal, "tax": tax, "total": total, "status": status},
+        {"inv": inv, "subtotal": subtotal, "tax": tax, "total": total,
+         "status": status},
         request=request,
     )
 
