@@ -87,11 +87,6 @@ Currently, the app assumes access to internal databases for **Matters**, **Perso
 
 ---
 
-## 🔍 Queries & Data Manipulation
-- #### [CRUD Functionality](/readme_docs/crud.md)
-
----
-
 ## 🧯 Issues & Fixes
 - #### [Bugs & Fixes](/readme_docs/bugs.md)
 

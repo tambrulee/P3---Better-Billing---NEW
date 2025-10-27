@@ -88,13 +88,3 @@ Testing demonstrated:
 - **Secure deployment** with no exposed credentials  
 
 Future automated testing could extend this foundation by introducing Django’s unit testing framework or Selenium for end-to-end UI testing, but for the scope of this project, manual testing covered all core functionality thoroughly.
-
----
-
-**Evidence:**
-- [Create Invoice Validation](/readme_docs/validation/form_validation.png)  
-- [Screenshot: CRUD Test Results]  
-- [Screenshot: Responsive View on Mobile]  
-- [Screenshot: Heroku Deployment Confirmation]  
-
-HTML - Downloaded HTML5 Validator via Java (Java installed via Homebrew)
