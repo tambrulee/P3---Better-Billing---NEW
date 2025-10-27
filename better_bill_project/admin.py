@@ -122,7 +122,7 @@ class ClientAdmin(ImportExportModelAdmin):
 @admin.register(Personnel)
 class PersonnelAdmin(ImportExportModelAdmin):
     resource_class = PersonnelResource
-    list_display = ("initials", "name", "role", "rate_display", "line_manager")
+    list_display = ("initials", "name", "role", "rate_display", "line_manager", "is_admin", "is_billing")
     list_select_related = ("role",)
     search_fields = ("initials", "name", "role__role","line_manager", "user__username", "user__email")  # note the double underscore
     autocomplete_fields = ["user", "role", "line_manager"]

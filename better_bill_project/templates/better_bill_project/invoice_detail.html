@@ -16,24 +16,22 @@
     <a class="btn btn-success btn-sm" href="{% url 'invoice-pdf' inv.pk %}" target="_blank">
       Download PDF
     </a>
-     <!--  Mark as settled button (uses inv + can_settle) -->
+      {# Mark as settled — Billing only, when posted #}
       {% if can_settle %}
         <form method="post" action="{% url 'invoice-settle' inv.pk %}" class="d-inline">
           {% csrf_token %}
-          <button type="submit" class="btn btn-success btn-sm">
-            Mark as settled
-          </button>
+          <button type="submit" class="btn btn-success btn-sm">Mark as settled</button>
         </form>
       {% endif %}
-    <!-- Unmark as settled button (uses inv.ledger.status) -->
-      {% if inv.ledger and inv.ledger.status == 'paid' %}
+
+      {# Unmark as settled — Billing only, when paid #}
+      {% if can_unsettle %}
         <form method="post" action="{% url 'invoice-unsettle' inv.pk %}" class="d-inline">
           {% csrf_token %}
-          <button type="submit" class="btn btn-success btn-sm">
-            Unmark as settled
-          </button>
+          <button type="submit" class="btn btn-outline-secondary btn-sm">Unmark as settled</button>
         </form>
-{% endif %}
+      {% endif %}
+
   </div>
 </div>
 

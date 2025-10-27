@@ -55,42 +55,21 @@ PERM_POST_INV = f"{APP_LABEL}.post_invoice"
 # Roles allowed to see their team’s WIP and invoices
 WIP_ONLY_ROLES = ("Case administrator", "Trainee associate", "Paralegal")
 
-def _team_personnel_ids(me: Personnel | None):
-    """
-    Return None => no filtering (see all).
-    Return [ids] => filter to these fee earners.
-    """
-    if not me:
-        return []
-    # Show ALL for admin or billing
-    rn = (getattr(getattr(me, "role", None), "role", "") or "").strip().lower()
-    is_billing = ("billing" in rn) or rn == "billing administrator"
-    if getattr(me, "is_admin", False) or is_billing:
-        return None
-
-    ids = [me.id]
-    if me.role and getattr(me.role, "role", None) in ALLOWED_MANAGER_ROLES:
-        ids += list(me.delegates.values_list("id", flat=True))
-    return ids
-
-
 # Helper to check if user can view invoices
 ROLE_BILLING = {"billing administrator", "billing", "accounts", "finance"}
 ROLE_PARTNER = {"partner"}
 ROLE_ASSOC_PARTNER = {"associate partner", "assoc partner", "associate_partner"}
 
+# ---- Role utilities ----
 def _personnel(user):
-    """Return the Personnel for a user, regardless of related_name."""
+    """Return the Personnel object for a user, regardless of related_name."""
     if not getattr(user, "is_authenticated", False):
         return None
-    # try common related_names
     for rel in ("personnel_profile", "personnel", "profile"):
         p = getattr(user, rel, None)
         if p is not None:
             return p
-    # last resort: look it up
     try:
-        from .models import Personnel
         return Personnel.objects.select_related("role").filter(user=user).first()
     except Exception:
         return None
@@ -100,46 +79,187 @@ def _role_name(p) -> str:
 
 def _is_billing(p) -> bool:
     rn = _role_name(p)
-    return rn in ROLE_BILLING or ("billing" in rn)  # tolerant
+    return rn == "billing administrator" or "billing" in rn or rn in {"accounts", "finance"}
 
 def _is_partner(p) -> bool:
-    return _role_name(p) in ROLE_PARTNER
+    return _role_name(p) == "partner"
 
 def _is_assoc(p) -> bool:
-    return _role_name(p) in ROLE_ASSOC_PARTNER
+    return _role_name(p) in {"associate partner", "assoc partner", "associate_partner"}
 
-def _is_admin(user, p) -> bool:
-    # treat Django superuser as admin; adjust if you have a separate admin role
+def _is_admin(user, p=None) -> bool:
+    # Treat Django superuser as admin
     return bool(getattr(user, "is_superuser", False))
 
-def _can_view_invoices(user) -> bool:
+# --- Replace your can_view_invoices_user with this ---
+def can_view_invoices_user(user) -> bool:
+    """
+    Return True for:
+    - superuser
+    - explicit Django permission
+    - Personnel boolean flags (is_admin / is_billing / is_cashier / is_partner / is_associate_partner)
+    - role name strings that include 'billing' etc. (tolerant)
+    """
+    if getattr(user, "is_superuser", False):
+        return True
+
+    # If you configured model-level perms, keep this check:
+    try:
+        if user.has_perm(PERM_VIEW_INV):
+            return True
+    except Exception:
+        pass
+
     p = _personnel(user)
     if not p:
         return False
-    return any([_is_admin(user, p), _is_billing(p), _is_partner(p), _is_assoc(p)])
 
-def can_view_invoices_user(user):
-    # allow via superuser, built-in Django permission, OR role-based rule
-    return (
-        getattr(user, "is_superuser", False)
-        or user.has_perm(PERM_VIEW_INV)
-        or _can_view_invoices(user)
+    if any([
+        bool(getattr(p, "is_admin", False)),
+        bool(getattr(p, "is_billing", False)),
+        bool(getattr(p, "is_cashier", False)),
+        bool(getattr(p, "is_partner", False)),
+        bool(getattr(p, "is_associate_partner", False)),
+    ]):
+        return True
+
+    rn = _role_name(p)
+    if (
+        rn == "billing administrator"
+        or "billing" in rn
+        or rn in {"admin", "partner", "associate partner"}
+    ):
+        return True
+
+    return False
+
+# ---- Robust flag resolver ----
+BILLING_KEYWORDS = {"billing administrator",}
+MANAGER_KEYWORDS = {"partner", "associate partner"}
+
+def _effective_flags(user):
+    """
+    Returns flags dict:
+      - can_view_invoices: True for superuser, users with view perm, Personnel boolean flags,
+                           or role names containing billing/manager keywords.
+      - can_log_time: False for billing/cashier; True otherwise (if Personnel exists).
+    Works even if your Personnel booleans aren't set, by falling back to role name keywords.
+    """
+    flags = {"can_view_invoices": False, "can_log_time": False}
+    if not getattr(user, "is_authenticated", False):
+        return flags
+
+    # Superuser is always allowed
+    if getattr(user, "is_superuser", False):
+        flags["can_view_invoices"] = True
+        flags["can_log_time"] = True  # superuser can do anything
+        return flags
+
+    # Permission fallback (keep if you've set perms)
+    try:
+        if user.has_perm(PERM_VIEW_INV):
+            flags["can_view_invoices"] = True
+    except Exception:
+        pass
+
+    p = _personnel(user)
+    if not p:
+        return flags
+
+    # Pull booleans if your Personnel has them; default to False if missing
+    p_is_admin   = bool(getattr(p, "is_admin", False))
+    p_is_billing = bool(getattr(p, "is_billing", False))
+    p_is_cashier = bool(getattr(p, "is_cashier", False))
+    p_is_partner = bool(getattr(p, "is_partner", False))
+    p_is_assoc   = bool(getattr(p, "is_associate_partner", False))
+
+    # Role name tolerance
+    rn = _role_name(p)  # already lower-cased in your helper
+    # quick keyword tests
+    has_billing_kw = any(k in rn for k in BILLING_KEYWORDS)
+    is_manager_kw  = any(k in rn for k in MANAGER_KEYWORDS)
+
+    # Compute
+    can_view = (
+        flags["can_view_invoices"]                # from perms above, if any
+        or p_is_admin or p_is_billing or p_is_cashier or p_is_partner or p_is_assoc
+        or has_billing_kw or is_manager_kw
     )
+    # Time logging: block billing/cashier (by boolean or keyword)
+    is_billingish = p_is_billing or p_is_cashier or has_billing_kw
+    can_log = not is_billingish
+
+    flags["can_view_invoices"] = bool(can_view)
+    flags["can_log_time"] = bool(can_log)
+    return flags
+
+
+def is_time_entry_user(user) -> bool:
+    """Allowed to log time = not billing and not cashier."""
+    p = _personnel(user)
+    if not p:
+        return False
+    rn = _role_name(p)
+    is_cashier = "cashier" in rn
+    return (not _is_billing(p)) and (not is_cashier)
+
+def _team_personnel_ids(me: Personnel | None):
+    """
+    Return None => no filtering (see all).
+    Return []   => filter but matches nothing (guest).
+    Return [ids] => filter to these fee earners.
+    """
+    if not me:
+        return []
+    # Admin or Billing => see everything
+    if getattr(me, "is_admin", False) or _is_billing(me):
+        return None
+
+    ids = [me.id]
+    rn = _role_name(me)
+    if rn in ALLOWED_MANAGER_ROLES:
+        try:
+            ids += list(me.delegates.values_list("id", flat=True))
+        except Exception:
+            pass
+    return ids
 
 def require_invoice_access(viewfunc):
     @login_required
     def _wrapped(request, *args, **kwargs):
-        if not _can_view_invoices(request.user):
+        if not can_view_invoices_user(request.user):
             raise PermissionDenied
         return viewfunc(request, *args, **kwargs)
     return _wrapped
 
+def _is_billing_only(user):
+    """True only for Billing role (plus superuser override)."""
+    if getattr(user, "is_superuser", False):
+        return True
+    p = _personnel(user)
+    return bool(p) and _is_billing(p)
+
+
 # Index
+
 @login_required
 def index(request):
     me = _personnel(request.user)
 
-    # Base context defaults so the page can always render
+    p = me
+    rn = _role_name(p) if p else "<none>"
+    info = {
+        "is_superuser": bool(getattr(request.user, "is_superuser", False)),
+        "p_exists": bool(p),
+        "p_is_admin": bool(getattr(p, "is_admin", False)) if p else False,
+        "p_is_billing": bool(getattr(p, "is_billing", False)) if p else False,
+        "p_is_cashier": bool(getattr(p, "is_cashier", False)) if p else False,
+        "p_is_partner": bool(getattr(p, "is_partner", False)) if p else False,
+        "p_is_assoc": bool(getattr(p, "is_associate_partner", False)) if p else False,
+        "role_name": rn,
+    }
+    print("DASHBOARD ROLES:", info)  # shows up in runserver console
+
     context = {
         "wip_items": [],
         "wip_total_hours": Decimal("0.0"),
@@ -152,35 +272,38 @@ def index(request):
         "post_tax":       Decimal("0.00"),
         "post_total":     Decimal("0.00"),
         "can_view_invoices": False,
+        "can_log_time": False,
     }
 
     if not me:
         return render(request, "better_bill_project/index.html", context)
 
-    can_view_invoices = Scope(me).can_view_invoice()
-    context["can_view_invoices"] = can_view_invoices_user(request.user)
+    flags = _effective_flags(request.user)
+    context["can_view_invoices"] = flags["can_view_invoices"]
+    context["can_log_time"] = flags["can_log_time"]
 
+    # ----- Team scoping -----
+    team_ids = _team_personnel_ids(me)  # may be None, [], or [ids]
+    # Admin/Billing see everything (clear filter)
+    if getattr(request.user, "is_superuser", False) or any(k in _role_name(me) for k in BILLING_KEYWORDS) or getattr(me, "is_admin", False) or getattr(me, "is_billing", False):
+        team_ids = None
 
-    team_ids = _team_personnel_ids(me)
-
-    # ----- Unbilled WIP (always) -----
+    # ----- Unbilled WIP -----
     wip_qs = (WIP.objects
               .select_related("matter", "client")
               .filter(status="unbilled")
               .order_by("-created_at"))
-    if team_ids:  # only filter if we have a list of ids
+    if team_ids:
         wip_qs = wip_qs.filter(fee_earner_id__in=team_ids)
 
     context["wip_items"] = list(wip_qs[:10])
     context["wip_total_hours"] = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
 
     # ----- Invoices (only when allowed) -----
-    if can_view_invoices:
+    if context["can_view_invoices"]:
         invoice_base = (Invoice.objects
-            .select_related("client", "matter", "ledger"))
+                        .select_related("client", "matter", "ledger"))
 
-        # If we have team_ids (i.e., NOT billing/admin), restrict to invoices
-        # that contain lines from the team. Otherwise, Billing/Admin see all.
         if team_ids:
             invoice_base = (invoice_base
                 .annotate(has_team_work=Exists(
@@ -194,12 +317,8 @@ def index(request):
         draft_qs  = invoice_base.filter(ledger__status="draft").order_by("-created_at")[:10]
         posted_qs = invoice_base.filter(ledger__status="posted").order_by("-created_at")[:10]
 
-        draft_totals = draft_qs.aggregate(subtotal=Sum("ledger__subtotal"),
-                                          tax=Sum("ledger__tax"),
-                                          total=Sum("ledger__total"))
-        post_totals  = posted_qs.aggregate(subtotal=Sum("ledger__subtotal"),
-                                           tax=Sum("ledger__tax"),
-                                           total=Sum("ledger__total"))
+        draft_totals = draft_qs.aggregate(subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"))
+        post_totals  = posted_qs.aggregate(subtotal=Sum("ledger__subtotal"), tax=Sum("ledger__tax"), total=Sum("ledger__total"))
 
         context.update({
             "draft_invoices": list(draft_qs),
@@ -213,7 +332,6 @@ def index(request):
         })
 
     return render(request, "better_bill_project/index.html", context)
-
 
 # Time Entry Form
 @login_required
@@ -669,8 +787,10 @@ def invoice_detail(request, pk):
     total    = ledger.total    if has_ledger else inv.total
     status   = ledger.status   if has_ledger else "—"
 
-    # Only allow “settle” when the LEDGER is posted (not the invoice)
-    can_settle = has_ledger and ledger.status == "posted"
+    # ---- Billing-only controls ----
+    is_billing_user = _is_billing_only(request.user)
+    can_settle   = bool(is_billing_user and has_ledger and ledger.status == "posted")
+    can_unsettle = bool(is_billing_user and has_ledger and ledger.status == "paid")
 
     return render(request, "better_bill_project/invoice_detail.html", {
         "inv": inv,
@@ -679,6 +799,7 @@ def invoice_detail(request, pk):
         "total": total,
         "status": status,
         "can_settle": can_settle,
+        "can_unsettle": can_unsettle,
     })
 
 
@@ -750,35 +871,29 @@ def invoice_pdf(request, pk):
     return resp
 
 # Settle Invoice View
-
 @login_required
-@permission_required(PERM_VIEW_INV, raise_exception=True)
+@permission_required(PERM_POST_INV, raise_exception=True)  # was PERM_VIEW_INV
 @require_POST
 @transaction.atomic
 def settle_invoice(request, pk):
-    # Pull related ledger in one query
-    invoice = get_object_or_404(
-        Invoice.objects.select_related("ledger"),
-        pk=pk
-    )
+    if not _is_billing_only(request.user):
+        raise PermissionDenied
 
-    # Ensure a ledger exists
+    invoice = get_object_or_404(Invoice.objects.select_related("ledger"), pk=pk)
     ledger = getattr(invoice, "ledger", None)
     if ledger is None:
         messages.error(request, "No ledger entry exists for this invoice.")
         return redirect("invoice-detail", pk=pk)
 
-    # Only settle if the LEDGER is posted
     if ledger.status != "posted":
         messages.error(request, "Only posted invoices can be settled.")
         return redirect("invoice-detail", pk=pk)
 
-    # Idempotency: if already paid, just inform
+    # Idempotency
     if ledger.status == "paid":
         messages.info(request, "This invoice is already marked as paid.")
         return redirect("invoice-detail", pk=pk)
 
-    # Update ledger -> paid
     ledger.status = "paid"
     ledger.paid_at = timezone.now()
     ledger.save(update_fields=["status", "paid_at"])
@@ -786,13 +901,17 @@ def settle_invoice(request, pk):
     messages.success(request, f"Invoice {invoice.number} marked as settled.")
     return redirect("invoice-detail", pk=pk)
 
+
 # Unsettle Invoice View
-@permission_required(PERM_VIEW_INV, raise_exception=True)
+@login_required                         # <— add this (was missing)
+@permission_required(PERM_POST_INV, raise_exception=True)  # was PERM_VIEW_INV
 @require_POST
 @transaction.atomic
 def unsettle_invoice(request, pk):
-    invoice = get_object_or_404(Invoice.objects.select_related("ledger"), pk=pk)
+    if not _is_billing_only(request.user):
+        raise PermissionDenied
 
+    invoice = get_object_or_404(Invoice.objects.select_related("ledger"), pk=pk)
     ledger = getattr(invoice, "ledger", None)
     if ledger is None:
         messages.error(request, "No ledger entry exists for this invoice.")
@@ -802,13 +921,13 @@ def unsettle_invoice(request, pk):
         messages.error(request, "Only paid invoices can be unmarked as settled.")
         return redirect("invoice-detail", pk=pk)
 
-    # Revert: paid -> posted, clear paid_at
     ledger.status = "posted"
     ledger.paid_at = None
     ledger.save(update_fields=["status", "paid_at"])
 
     messages.success(request, f"Invoice {invoice.number} unmarked as settled.")
     return redirect("invoice-detail", pk=pk)
+
 
 # Custom 404 page
 
