@@ -128,7 +128,7 @@ This section connects the user’s activity-based work with the final billing ou
 
 **Use of Bootstrap and Custom CSS**
 
-Bootstrap provided a strong foundation for responsive design, ensuring compatibility across desktop, tablet, and mobile devices. Custom CSS was added to enhance branding and tailor the visual hierarchy—using colour accents, card components, and subtle shadows to distinguish sections and guide user attention. The combination of Bootstrap’s grid system and custom styling promoted both efficiency and aesthetic appeal.
+Bootstrap provided a strong foundation for responsive design, ensuring compatibility across [desktop, tablet, and mobile devices](/readme_docs/mobile_responsive). Custom CSS was added to enhance branding and tailor the visual hierarchy—using colour accents, card components, and subtle shadows to distinguish sections and guide user attention. The combination of Bootstrap’s grid system and custom styling promoted both efficiency and aesthetic appeal.
 
 **Information Architecture and Navigation**
 
