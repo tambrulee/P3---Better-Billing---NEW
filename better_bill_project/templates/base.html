@@ -77,12 +77,14 @@
               {% endif %}
 
               <!-- View Invoices -->
-              {% if can_view_invoices %}
-              <li class="nav-item">
-                <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
-                  href="{% url 'view-invoice' %}">Invoices</a>
-              </li>
+              {# show if either: the view set can_view_invoices OR user has the built-in perm #}
+              {% if can_view_invoices or perms.better_bill_project.view_invoice %}
+                <li class="nav-item">
+                  <a class="nav-link px-3 py-2 {% if url_name == 'view-invoice' %}active{% endif %}"
+                    href="{% url 'view-invoice' %}">Invoices</a>
+                </li>
               {% endif %}
+
             </ul>
 
             <!-- Right side: account area -->

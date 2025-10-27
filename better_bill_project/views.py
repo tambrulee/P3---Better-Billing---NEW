@@ -24,6 +24,8 @@ from urllib.parse import urlparse # for URL parsing
 from xhtml2pdf import pisa # for PDF generation
 from .permissions import Scope # import your permissions class
 
+
+
 # ---- Role helpers (server-side guards) ----
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.exceptions import PermissionDenied
@@ -50,21 +52,92 @@ PERM_POST_INV = f"{APP_LABEL}.post_invoice"
 
 # Dashboard View
 
-# Roles that should ONLY see Unbilled Time
+# Roles allowed to see their team’s WIP and invoices
 WIP_ONLY_ROLES = ("Case administrator", "Trainee associate", "Paralegal")
 
-def _team_personnel_ids(me: Personnel | None) -> list[int]:
+def _team_personnel_ids(me: Personnel | None):
+    """
+    Return None => no filtering (see all).
+    Return [ids] => filter to these fee earners.
+    """
     if not me:
         return []
+    # Show ALL for admin or billing
+    rn = (getattr(getattr(me, "role", None), "role", "") or "").strip().lower()
+    is_billing = ("billing" in rn) or rn == "billing administrator"
+    if getattr(me, "is_admin", False) or is_billing:
+        return None
+
     ids = [me.id]
     if me.role and getattr(me.role, "role", None) in ALLOWED_MANAGER_ROLES:
         ids += list(me.delegates.values_list("id", flat=True))
     return ids
 
+
+# Helper to check if user can view invoices
+ROLE_BILLING = {"billing administrator", "billing", "accounts", "finance"}
+ROLE_PARTNER = {"partner"}
+ROLE_ASSOC_PARTNER = {"associate partner", "assoc partner", "associate_partner"}
+
+def _personnel(user):
+    """Return the Personnel for a user, regardless of related_name."""
+    if not getattr(user, "is_authenticated", False):
+        return None
+    # try common related_names
+    for rel in ("personnel_profile", "personnel", "profile"):
+        p = getattr(user, rel, None)
+        if p is not None:
+            return p
+    # last resort: look it up
+    try:
+        from .models import Personnel
+        return Personnel.objects.select_related("role").filter(user=user).first()
+    except Exception:
+        return None
+
+def _role_name(p) -> str:
+    return (getattr(getattr(p, "role", None), "role", "") or "").strip().lower()
+
+def _is_billing(p) -> bool:
+    rn = _role_name(p)
+    return rn in ROLE_BILLING or ("billing" in rn)  # tolerant
+
+def _is_partner(p) -> bool:
+    return _role_name(p) in ROLE_PARTNER
+
+def _is_assoc(p) -> bool:
+    return _role_name(p) in ROLE_ASSOC_PARTNER
+
+def _is_admin(user, p) -> bool:
+    # treat Django superuser as admin; adjust if you have a separate admin role
+    return bool(getattr(user, "is_superuser", False))
+
+def _can_view_invoices(user) -> bool:
+    p = _personnel(user)
+    if not p:
+        return False
+    return any([_is_admin(user, p), _is_billing(p), _is_partner(p), _is_assoc(p)])
+
+def can_view_invoices_user(user):
+    # allow via superuser, built-in Django permission, OR role-based rule
+    return (
+        getattr(user, "is_superuser", False)
+        or user.has_perm(PERM_VIEW_INV)
+        or _can_view_invoices(user)
+    )
+
+def require_invoice_access(viewfunc):
+    @login_required
+    def _wrapped(request, *args, **kwargs):
+        if not _can_view_invoices(request.user):
+            raise PermissionDenied
+        return viewfunc(request, *args, **kwargs)
+    return _wrapped
+
 # Index
 @login_required
 def index(request):
-    me = getattr(request.user, "personnel_profile", None)
+    me = _personnel(request.user)
 
     # Base context defaults so the page can always render
     context = {
@@ -85,32 +158,38 @@ def index(request):
         return render(request, "better_bill_project/index.html", context)
 
     can_view_invoices = Scope(me).can_view_invoice()
-    context["can_view_invoices"] = can_view_invoices
+    context["can_view_invoices"] = can_view_invoices_user(request.user)
+
 
     team_ids = _team_personnel_ids(me)
 
-    # Unbilled WIP (always)
-    wip_qs = (
-        WIP.objects
-        .select_related("matter", "client")
-        .filter(status="unbilled", fee_earner_id__in=team_ids)
-        .order_by("-created_at")
-    )
+    # ----- Unbilled WIP (always) -----
+    wip_qs = (WIP.objects
+              .select_related("matter", "client")
+              .filter(status="unbilled")
+              .order_by("-created_at"))
+    if team_ids:  # only filter if we have a list of ids
+        wip_qs = wip_qs.filter(fee_earner_id__in=team_ids)
+
     context["wip_items"] = list(wip_qs[:10])
     context["wip_total_hours"] = wip_qs.aggregate(total=Sum("hours_worked"))["total"] or Decimal("0.0")
 
+    # ----- Invoices (only when allowed) -----
     if can_view_invoices:
-        invoice_base = (
-            Invoice.objects
-            .select_related("client", "matter", "ledger")
-            .annotate(has_team_work=Exists(
-                InvoiceLine.objects.filter(
-                    invoice_id=OuterRef("pk"),
-                    wip__fee_earner_id__in=team_ids
-                )
-            ))
-            .filter(has_team_work=True)
-        )
+        invoice_base = (Invoice.objects
+            .select_related("client", "matter", "ledger"))
+
+        # If we have team_ids (i.e., NOT billing/admin), restrict to invoices
+        # that contain lines from the team. Otherwise, Billing/Admin see all.
+        if team_ids:
+            invoice_base = (invoice_base
+                .annotate(has_team_work=Exists(
+                    InvoiceLine.objects.filter(
+                        invoice_id=OuterRef("pk"),
+                        wip__fee_earner_id__in=team_ids
+                    )
+                ))
+                .filter(has_team_work=True))
 
         draft_qs  = invoice_base.filter(ledger__status="draft").order_by("-created_at")[:10]
         posted_qs = invoice_base.filter(ledger__status="posted").order_by("-created_at")[:10]
@@ -205,7 +284,7 @@ def record_time(request):
             return redirect("record-time")
         else:
             messages.error(request, "Please correct the errors below.")
-        form_qe = None  # not used in this branch
+        form_qe = None  
     else:
         form = TimeEntryForm(user=request.user)
         form_qe = None
@@ -228,12 +307,11 @@ def record_time(request):
 def delete_time_entry(request, pk):
     """ Delete a time entry if unbilled and permitted.
     """
-    # Reuse your existing permission rule
+
     is_partner = request.user.has_perm(
         "better_bill_project.post_invoice") or request.user.is_superuser
     personnel_for_user = getattr(request.user, "personnel_profile", None)
 
-    # Keep it strict + cheap
     te = get_object_or_404(
         TimeEntry.objects.select_related("wip", "fee_earner"),
         pk=pk
@@ -395,6 +473,7 @@ def create_invoice(request):
 
 # View Invoice
 @login_required
+@user_passes_test(can_view_invoices_user, login_url="/accounts/login/")
 @permission_required(PERM_VIEW_INV, raise_exception=True)
 def view_invoice(request):
     """ List and filter invoices with pagination and totals.
@@ -601,22 +680,6 @@ def invoice_detail(request, pk):
         "status": status,
         "can_settle": can_settle,
     })
-
-def _can_view_invoices(user) -> bool:
-    me = getattr(user, "personnel_profile", None)
-    return bool(me and Scope(me).can_view_invoice())
-
-def require_invoice_access(viewfunc):
-    @login_required
-    def _wrapped(request, *args, **kwargs):
-        if not _can_view_invoices(request.user):
-            raise PermissionDenied
-        return viewfunc(request, *args, **kwargs)
-    return _wrapped
-
-@require_invoice_access
-def view_invoice(request):
-    ...
 
 
 # PDF Viewer
