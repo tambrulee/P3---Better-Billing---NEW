@@ -65,6 +65,8 @@ Existing bugs:
 
 * Inputting incorrect time increments for example 'O.35' causes a 500 error
 
+* WIP not auto selecting to matter on Create Invoice
+
 ### Summary and Lessons Learned
 Throughout the debugging process, systematic testing and documentation proved essential. Each issue reinforced the importance of version control hygiene, modular code organization, and proactive dependency management. By resolving these bugs methodically, the project evolved into a more stable, secure, and maintainable application.
 
