@@ -111,20 +111,25 @@ def _personnel(user):
         return None
 
 def _role_name(p) -> str:
+    """Return the Personnel's role name in lowercase, or empty string."""
     return (getattr(getattr(p, "role", None), "role", "") or "").strip().lower()
 
 def _is_billing(p) -> bool:
+    """Return True if Personnel is billing administrator or similar."""
     rn = _role_name(p)
     return rn == "billing administrator" or "billing" in rn or rn in {
         "accounts", "finance"}
 
 def _is_partner(p) -> bool:
+    """Return True if Personnel is partner."""
     return _role_name(p) == "partner"
 
 def _is_assoc(p) -> bool:
+    """Return True if Personnel is associate partner."""
     return _role_name(p) in {"associate partner"}
 
 def _is_admin(user, p=None) -> bool:
+    """Return True if Personnel is admin."""
     # Treat Django superuser as admin
     return bool(getattr(user, "is_superuser", False))
 
@@ -258,8 +263,10 @@ def _team_personnel_ids(me: Personnel | None):
     return ids
 
 def require_invoice_access(viewfunc):
+    """Decorator to require invoice view permission."""
     @login_required
     def _wrapped(request, *args, **kwargs):
+        """Check permission before calling view."""
         if not can_view_invoices_user(request.user):
             raise PermissionDenied
         return viewfunc(request, *args, **kwargs)
@@ -277,6 +284,7 @@ def _is_billing_only(user):
 
 @login_required
 def index(request):
+    """ Dashboard view showing WIP and invoices based on roles/permissions. """
     me = _personnel(request.user)
 
     p = me
@@ -809,6 +817,7 @@ def post_invoice_view(request):
 @login_required
 @permission_required(PERM_VIEW_INV, raise_exception=True)
 def invoice_detail(request, pk):
+    """ View details of a single invoice, with billing controls if allowed. """
     inv = get_object_or_404(
         Invoice.objects
         .select_related("client", "matter", "ledger")
@@ -921,6 +930,7 @@ def invoice_pdf(request, pk):
 @require_POST
 @transaction.atomic
 def settle_invoice(request, pk):
+    """ Mark an invoice as settled (paid) if posted."""
     if not _is_billing_only(request.user):
         raise PermissionDenied
 
@@ -953,6 +963,7 @@ def settle_invoice(request, pk):
 @require_POST
 @transaction.atomic
 def unsettle_invoice(request, pk):
+    """ Unmark an invoice as settled (paid) if previously paid."""
     if not _is_billing_only(request.user):
         raise PermissionDenied
 
