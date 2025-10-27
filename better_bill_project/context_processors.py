@@ -9,6 +9,7 @@ APP_LABEL = Invoice._meta.app_label
 PERM_VIEW_INV = f"{APP_LABEL}.view_invoice"
 
 def personnel(request):
+    """Add the Personnel profile of the logged-in user to the context."""
     if not request.user.is_authenticated:
         return {"me": None}
     try:
@@ -19,6 +20,7 @@ def personnel(request):
 
 
 def ui_flags(request):
+    """Add UI flags to the context based on user permissions."""
     me = getattr(getattr(request, "user", None), "personnel_profile", None)
     can_view_invoices = False
     if me:
@@ -26,12 +28,15 @@ def ui_flags(request):
     return {"can_view_invoices": can_view_invoices}
 
 def _personnel(user):
+    """Get Personnel profile for user, or None."""
     return getattr(user, "personnel_profile", None)
 
 def _role_name(p) -> str:
+    """Get normalised role name from Personnel, or empty string."""
     return (getattr(getattr(p, "role", None), "role", "") or "").strip().lower()
 
 def _scope_can_view(user) -> bool:
+    """Check if user can view invoices based on their scope."""
     p = _personnel(user)
     if not p:
         return False
@@ -42,6 +47,7 @@ def _scope_can_view(user) -> bool:
     return any([user.is_superuser, is_billing, is_partner, is_assoc])
 
 def caps(request):
+    """Add capability flags to the context based on user permissions."""
     user = getattr(request, "user", None)
     can_view = False
     if user and user.is_authenticated:

@@ -31,6 +31,7 @@ class Client(models.Model):
         ordering = ["name"]
 
     def __str__(self):
+        """String representation of Client."""
         return f"{self.client_number} - {self.name}"
 
     @property
@@ -60,6 +61,7 @@ class Role(models.Model):
         ordering = ["role"]
 
     def __str__(self):
+        """String representation of Role."""
         return f"{self.role} @ {self.rate}"
 
 # --- Personnel lookup ---
@@ -87,11 +89,13 @@ class Personnel(models.Model):
         ordering = ["initials"]
 
     def __str__(self):
+        """String representation of Personnel."""
         return f"{
             self.initials} - {self.name} ({
                 self.role.role if self.role_id else '—'})"
 
     def clean(self):
+        """Validate line manager's role."""
         super().clean()
         if self.line_manager_id:
             lm = self.line_manager
@@ -103,6 +107,7 @@ class Personnel(models.Model):
                 })
 
     def save(self, *args, **kwargs):
+        """Ensure clean() is called on save."""
         self.full_clean()   # ensures clean() runs outside forms/admin
         return super().save(*args, **kwargs)
 
@@ -131,20 +136,27 @@ class Personnel(models.Model):
     # --- booleans used by views/permissions ---
     @property
     def is_admin(self):
+        """Check if user is admin or superuser."""
         return getattr(self.user, "is_superuser", False) or self._role_key() == "admin"
     @property
     def is_cashier(self):           return self._role_key() == "cashier"
+    """ Check if user is cashier. """
     @property
     def is_billing(self):           return self._role_key() == "billing"
+    """ Check if user is billing administrator. """
     @property
     def is_partner(self):           return self._role_key() == "partner"
+    """ Check if user is partner. """
     @property
     def is_associate_partner(self): return self._role_key() == "associate_partner"
+    """ Check if user is associate partner. """
     @property
     def is_fee_earner(self):        return self._role_key() == "fee_earner"
+    """ Check if user is fee earner. """
 
     # Direct reports (single level)
     def delegate_user_ids(self):
+        """Get user IDs of direct report delegates."""
         return self.delegates.exclude(
             user__isnull=True).values_list("user_id", flat=True)
     
@@ -166,6 +178,7 @@ class Matter(models.Model):
         ordering = ["matter_number"]
 
     def __str__(self):
+        """String representation of Matter."""
         return f"{self.matter_number} - {self.description or self.client.name}"
 
 # --- Activity code lookup ---
@@ -179,6 +192,7 @@ class ActivityCode(models.Model):
         verbose_name_plural = "Activity Codes"
 
     def __str__(self):
+        """String representation of ActivityCode."""
         return f"{self.activity_code} - {self.activity_description}"
 
 # --- Time Entry ---
@@ -204,6 +218,7 @@ class TimeEntry(models.Model):
         ordering = ["-created_at"]
 
     def clean(self):
+        """Validate that matter belongs to client."""
         super().clean()
         if not (self.matter_id and self.client_id):
             return
@@ -214,6 +229,7 @@ class TimeEntry(models.Model):
 
 
     def __str__(self):
+        """String representation of TimeEntry."""
         return (
             f"{self.matter.matter_number} | "
             f"{self.fee_earner.initials} | "
@@ -257,6 +273,7 @@ class WIP(models.Model):
 
 
     def clean(self):
+        """Validate WIP consistency with client, matter, and time entry."""
         super().clean()
 
         errors = {}
@@ -286,6 +303,7 @@ class WIP(models.Model):
             raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
+        """Ensure client is set from matter before saving."""
         if self._state.adding and self.time_entry_id is None:
             log.error("WIP.save() called without time_entry!\n%s",
                       "".join(traceback.format_stack(limit=12)))
@@ -295,6 +313,7 @@ class WIP(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
+        """String representation of WIP."""
         return f"WIP for {
             self.matter.matter_number} | {
             self.fee_earner.initials} | {
@@ -351,6 +370,7 @@ class InvoiceLine(models.Model):
         ordering = ["id"]
 
     def __str__(self):
+        """String representation of InvoiceLine."""
         return f"{
             self.invoice.number} — {self.wip.matter.matter_number} — {self.amount}"
 
@@ -382,4 +402,5 @@ class Ledger(models.Model):
         ]
 
     def __str__(self):
+        """String representation of Ledger."""
         return f"Ledger for {self.invoice.number} — {self.total}"

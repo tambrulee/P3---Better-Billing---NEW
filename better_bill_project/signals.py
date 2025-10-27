@@ -20,6 +20,7 @@ def create_or_sync_wip(sender: type[TimeEntry],
     - If updating and WIP missing (legacy rows), create it.
     """
     def _sync() -> None:
+        """Inner function to handle WIP creation/syncing."""
         try:
             if created:
                 obj, made = WIP.objects.get_or_create(

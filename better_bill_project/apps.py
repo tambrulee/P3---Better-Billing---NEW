@@ -5,4 +5,5 @@ class BetterBillProjectConfig(AppConfig):
     name = "better_bill_project"
 
     def ready(self):
+        """Import signal handlers."""
         from . import signals  # noqa: F401  <- important # pyright: ignore[reportUnusedImport]

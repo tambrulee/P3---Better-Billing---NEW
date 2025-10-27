@@ -30,6 +30,7 @@ class TimeEntryForm(forms.ModelForm):
         }
 
     def __init__(self, *args, user=None, **kwargs):
+        """ Initialize form with dynamic filtering based on user and client. """
         super().__init__(*args, **kwargs)
 
         # keep a handle to the user for save()
@@ -147,6 +148,7 @@ class InvoiceForm(forms.ModelForm):
         }
 
     def __init__(self, *args, user=None, **kwargs):
+        """ Initialize form with dynamic filtering of clients and matters based on user. """
         super().__init__(*args, **kwargs)
         self._user = user
         me = getattr(user, "personnel_profile", None)
@@ -202,6 +204,7 @@ class InvoiceForm(forms.ModelForm):
             self.fields["matter"].queryset = Matter.objects.none()
 
     def clean(self):
+        """ Ensure that the selected matter belongs to the selected client"""
         cleaned = super().clean()
         client = cleaned.get("client")
         matter = cleaned.get("matter")
@@ -221,6 +224,7 @@ class InvoiceForm(forms.ModelForm):
 
 class StyledAuthenticationForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
+        """ Initialize form with Bootstrap CSS classes. """
         super().__init__(*args, **kwargs)
         self.fields["username"].widget.attrs.update({"class": "form-control"})
         self.fields["password"].widget.attrs.update({"class": "form-control"})
@@ -239,6 +243,7 @@ class TimeEntryQuickEditForm(forms.ModelForm):
         }
 
     def clean_hours_worked(self):
+        """ Ensure hours worked is in 0.1-hour increments."""
         value = self.cleaned_data.get("hours_worked")
         if value is None:
             return value
