@@ -19,6 +19,8 @@ I managed version control for this project entirely through **VS Code** and **Gi
    VS Code prompted me to sign in to GitHub — once I did, I chose **“Publish to GitHub”** and confirmed the repository name.  
    VS Code automatically created a new repo on GitHub and pushed all my local files there.
 
+   * I also ensured the repository was made public in the project settings
+
 4. **Syncing Future Changes**  
    Whenever I made updates or fixes, I simply committed the changes and clicked **“Sync Changes”** to push them to GitHub.  
    This kept my remote repository fully in sync with my local version throughout development.
