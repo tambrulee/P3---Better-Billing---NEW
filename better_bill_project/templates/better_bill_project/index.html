@@ -12,18 +12,16 @@
   <!-- Page Title -->
   <h2 class="page-title">Dashboard</h2>
   <hr class="mt-4 mb-3">
-    <div class="row g-3">
 
-    <!-- Dashboard -->
-
+  <div class="row g-3">
     <!-- Unbilled Time -->
-    <div class="col-12 col-lg-4">
+    <div class="{% if can_view_invoices_nav %}col-12 col-lg-4{% else %}col-12 col-lg-12{% endif %}">
       <div class="card shadow-sm h-100">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start">
             <h5 class="card-title mb-0">Unbilled Time</h5>
             {% if can_log_time %}
-            <a href="{% url 'record-time' %}" class="btn btn-sm btn-success">+ Log Time</a>
+              <a href="{% url 'record-time' %}" class="btn btn-sm btn-success">+ Log Time</a>
             {% endif %}
           </div>
           <div class="mt-2 small text-muted">Showing latest 10</div>
@@ -49,7 +47,9 @@
                     <td class="text-end fw-semibold">{{ w.hours_worked|floatformat:1 }}</td>
                   </tr>
                 {% empty %}
-                  <tr><td colspan="3" class="text-center text-muted small">No unbilled items</td></tr>
+                  <tr>
+                    <td colspan="3" class="text-center text-muted small">No unbilled items</td>
+                  </tr>
                 {% endfor %}
               </tbody>
             </table>
@@ -57,8 +57,9 @@
         </div>
       </div>
     </div>
-  {% if can_view_invoices %}
-    <!-- Draft Invoices -->
+
+    {# Draft Invoices — only for allowed roles and when data fetched #}
+    {% if can_view_invoices_nav and can_view_invoices %}
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
@@ -82,12 +83,12 @@
                   <tr>
                     <td class="small">{{ inv.number }}</td>
                     <td class="small text-muted">{{ inv.invoice_date|date:"Y-m-d" }}</td>
-                    <td class="text-end fw-semibold">
-                      £{{ inv.ledger.total|floatformat:2 }}
-                    </td>
+                    <td class="text-end fw-semibold">£{{ inv.ledger.total|floatformat:2 }}</td>
                   </tr>
                 {% empty %}
-                  <tr><td colspan="3" class="text-center text-muted small">No draft invoices</td></tr>
+                  <tr>
+                    <td colspan="3" class="text-center text-muted small">No draft invoices</td>
+                  </tr>
                 {% endfor %}
               </tbody>
               <tfoot class="table-light">
@@ -101,8 +102,10 @@
         </div>
       </div>
     </div>
+    {% endif %}
 
-    <!-- Posted Invoices -->
+    {# Posted Invoices — same gating #}
+    {% if can_view_invoices_nav and can_view_invoices %}
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm h-100">
         <div class="card-body">
@@ -126,12 +129,12 @@
                   <tr>
                     <td class="small">{{ inv.number }}</td>
                     <td class="small text-muted">{{ inv.invoice_date|date:"Y-m-d" }}</td>
-                    <td class="text-end fw-semibold">
-                      £{{ inv.ledger.total|floatformat:2 }}
-                    </td>
+                    <td class="text-end fw-semibold">£{{ inv.ledger.total|floatformat:2 }}</td>
                   </tr>
                 {% empty %}
-                  <tr><td colspan="3" class="text-center text-muted small">No posted invoices</td></tr>
+                  <tr>
+                    <td colspan="3" class="text-center text-muted small">No posted invoices</td>
+                  </tr>
                 {% endfor %}
               </tbody>
               <tfoot class="table-light">
@@ -148,7 +151,9 @@
     {% endif %}
   </div>
 </main>
-{% endblock %}
+{% endblock content %}
+
+
 
 <!-- Scripts (pulls in bootstrap)-->
 {% block body_end %}
