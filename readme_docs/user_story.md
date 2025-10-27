@@ -18,7 +18,6 @@
 - **As an Associate Partner**, I want to view my own and my delegates’ time so that I can ensure all billable work is recorded correctly.  
 - **As a Partner**, I want to review my own and delegates’ time entries so that I can oversee billing readiness and performance.  
 - **As a Billing user**, I want to view all time entries in read-only mode so that I can verify entries before posting invoices.  
-- **As an Admin**, I want to read all time entries so that I can assist in audits and maintain oversight without modifying data.
 
 ### 4) Edit Time
 - **As an Fee Earner**, I want to edit my own unbilled time so that I can correct errors before invoicing.  
@@ -68,7 +67,6 @@ The system enables fee earners to record time and expenses, generate invoices, a
 - Editing disabled when linked invoice has `status="posted"`.  
 - UI hides/disables edit/delete buttons when locked.  
 - Attempted edits show “Locked – entry linked to posted invoice”.  
-- Admin override allowed for audit purposes.  
 **Achieved:** Financial data integrity preserved.
 
 ### 2.1 Generate Draft Invoice
@@ -156,7 +154,7 @@ The system enables fee earners to record time and expenses, generate invoices, a
 ---
 
 ## Permissions & Locking Summary
-- **Roles:** Fee Earner (create/edit own unbilled), Associate/Partner (oversight), Billing (finalise invoices), Admin (read-only audits).  
+- **Roles:** Fee Earner (create/edit own unbilled), Associate/Partner (oversight), Billing (finalise invoices)
 - **Locking Rules:**  
   - Time/Expense on a **posted** invoice → no update/delete.  
   - Draft invoices editable; **posted** invoices read-only.  
@@ -164,19 +162,18 @@ The system enables fee earners to record time and expenses, generate invoices, a
 
 ## Permissions Matrix
 
-| Feature / Page | Fee Earner | Associate Partner | Partner | Billing | Admin |
-|---|---|---|---|---|---|
-| **Index (Dashboard)** | View own unbilled time only | View own + delegates | View own + delegates | View all · no click-through | No access |
-| **Record Time** | Own | Own | Own | No access | No access |
-| **View Time** | Own | Own + delegates | Own + delegates | Read-only | Read-only |
-| **Edit Time** | Own | Own | Own | No access | No access |
-| **Delete Time** | Own | Own | Own | No access | No access |
-| **Create Invoice** | No access | Yes · for self + delegates | Yes · for self + delegates | No access | No access |
-| **Post/Delete Invoice** | No access | No access | No access | Yes | No access |
-| **View Invoice** | No access | Yes | Yes | Yes | No access |
-| **Mark Invoice as Paid** | No access | No access | No access | No access | No access |
+| Feature / Page | Fee Earner | Associate Partner | Partner | Billing |
+|---|---|---|---|---|
+| **Index (Dashboard)** | View own unbilled time only | View own + delegates | View own + delegates | View all · no click-through | 
+| **Record Time** | Own | Own | Own | No access |
+| **View Time** | Own | Own + delegates | Own + delegates | Read-only | 
+| **Edit Time** | Own | Own | Own | No access | 
+| **Delete Time** | Own | Own | Own | No access | 
+| **Create Invoice** | No access | Yes · for self + delegates | Yes · for self + delegates | No access |
+| **Post/Delete Invoice** | No access | No access | No access | Yes |
+| **View Invoice** | No access | Yes | Yes | Yes |
+| **Mark Invoice as Paid** | No access | No access | No access | No access |
 
 > **Notes**  
 > * “Delegates” means users assigned to the partner/associate partner for oversight.  
 > * Billing can **finalise** invoices (post/delete) but not create or edit time.  
-> * Admin is **read-only** for time to support audit; no invoice powers (per current scope).
