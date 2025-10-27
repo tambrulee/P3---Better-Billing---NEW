@@ -1,206 +1,190 @@
-# User Stories
+# Better Billing — Permissions & User Stories
+
+This document presents the permissions matrix and user stories for the **Better Billing** project in a README-friendly format.
+
+---
+
+## Permissions Matrix
+
+| Feature / Page | Other Fee Earners | Associate Partner | Partner | Billing | Admin |
+|---|---|---|---|---|---|
+| **Index (Dashboard)** | View own unbilled time only | View own + delegates | View own + delegates | View all · no click-through | No access |
+| **Record Time** | Own | Own | Own | No access | No access |
+| **View Time** | Own | Own + delegates | Own + delegates | Read-only | Read-only |
+| **Edit Time** | Own | Own | Own | No access | No access |
+| **Delete Time** | Own | Own | Own | No access | No access |
+| **Create Invoice** | No access | Yes · for self + delegates | Yes · for self + delegates | No access | No access |
+| **Post/Delete Invoice** | No access | No access | No access | Yes | No access |
+| **View Invoice** | No access | Yes | Yes | Yes | No access |
+| **Mark Invoice as Paid** | No access | No access | No access | No access | No access |
+
+> **Notes**  
+> * “Delegates” means users assigned to the partner/associate partner for oversight.  
+> * Billing can **finalise** invoices (post/delete) but not create or edit time.  
+> * Admin is **read-only** for time to support audit; no invoice powers (per current scope).
+
+---
+
+## User Stories (As a … I want … so that …)
+
+### 1) Dashboard (Index)
+- **As an Other Fee Earner**, I want to view only my own unbilled time so that I can track what remains to bill.  
+- **As an Associate Partner**, I want to view my own and my delegates’ unbilled time so that I can oversee team progress.  
+- **As a Partner**, I want to view my own and my delegates’ unbilled time so that I can plan billing cycles efficiently.  
+- **As a Billing user**, I want to view all dashboard metrics without click-through so that I can monitor overall billing without altering data.
+
+### 2) Record Time
+- **As an Other Fee Earner**, I want to record my own time so that my billable hours are captured accurately.  
+- **As an Associate Partner**, I want to record my own time so that my work is tracked consistently.  
+- **As a Partner**, I want to record my own time so that my client work is billable and transparent.
+
+### 3) View Time
+- **As an Other Fee Earner**, I want to view my own recorded time so that I can confirm what has been billed or remains unbilled.  
+- **As an Associate Partner**, I want to view my own and my delegates’ time so that I can ensure all billable work is recorded correctly.  
+- **As a Partner**, I want to review my own and delegates’ time entries so that I can oversee billing readiness and performance.  
+- **As a Billing user**, I want to view all time entries in read-only mode so that I can verify entries before posting invoices.  
+- **As an Admin**, I want to read all time entries so that I can assist in audits and maintain oversight without modifying data.
+
+### 4) Edit Time
+- **As an Other Fee Earner**, I want to edit my own unbilled time so that I can correct errors before invoicing.  
+- **As an Associate Partner**, I want to edit my own unbilled time so that my records remain accurate.  
+- **As a Partner**, I want to edit my own unbilled time so that client invoices reflect correct details.
+
+### 5) Delete Time
+- **As an Other Fee Earner**, I want to delete my own unbilled time so that I can remove accidental entries.  
+- **As an Associate Partner**, I want to delete my own unbilled time so that I can maintain clean and accurate records.  
+- **As a Partner**, I want to delete my own unbilled time so that unnecessary or duplicated entries are removed before billing.
+
+### 6) Create Invoice (Draft)
+- **As an Associate Partner**, I want to create draft invoices for myself and my delegates so that client billing can begin promptly.  
+- **As a Partner**, I want to create draft invoices for myself and my delegates so that I can manage billing across my matters efficiently.
+
+### 7) Post/Delete Invoice (Finalise)
+- **As a Billing user**, I want to post or delete invoices so that I can finalise or correct client billing once partner approval is confirmed.
+
+### 8) View Invoice
+- **As an Associate Partner**, I want to view invoices for myself and my delegates so that I can monitor billing progress.  
+- **As a Partner**, I want to view all invoices so that I can oversee billing activity across the firm.  
+- **As a Billing user**, I want to view all invoices so that I can verify amounts and maintain records.
+
+### 9) Mark Invoice as Paid (Future Scope)
+- *(Not currently permitted to any role.)* **Planned**: As a Billing user, I want to mark invoices as paid so that ledger statuses reflect received payments.
+
+---
 
 ## Project Summary – Better Billing
 
 This section documents how the **core billing workflow** has been implemented in the Better Billing project to meet the outlined user stories.  
-The system enables fee earners to record time and expenses, generate invoices, and give partners a clear overview of WIP (Work In Progress) and billing status.  
+The system enables fee earners to record time and expenses, generate invoices, and give partners a clear overview of WIP (Work In Progress) and billing status.
 
----
-
-### **1.1 Record Time**
-**Goal:**  
-Allow fee earners to record hours worked on matters for accurate client billing.
-
+### 1.1 Record Time
+**Goal:** Allow fee earners to record hours worked on matters for accurate client billing.  
 **Implementation Details:**  
-- The **TimeEntry** model captures key data: `matter`, `fee_earner`, `activity_code`, `hours_worked`, and `narrative`.  
-- The **TimeEntryForm** enforces validation rules ensuring positive durations, valid activity codes, and required narratives.  
-- When a new entry is created, it’s linked to an **open matter** and saved as **unbilled (draft)**.  
-- A **recent entries list** displays the last ten submissions for easy reference.  
-- Django messages confirm successful saves or validation errors.
+- `TimeEntry` model: `matter`, `fee_earner`, `activity_code`, `hours_worked`, `narrative`.  
+- `TimeEntryForm` validates positive duration, valid activity code, required narrative.  
+- New entries link to an **open matter** and save as **unbilled (draft)**.  
+- “Recent entries” shows the last 10 submissions.  
+- Django messages confirm saves or validation errors.  
+**Achieved:** Correctly updates matter’s unbilled totals.
 
- **Achieved:** The manual time entry workflow functions as expected and correctly updates the matter’s unbilled totals.
-
-**Links:**  
-[Time entry interface](/readme_docs/user_stories/record_hours.png),  
-[Line item entries](/readme_docs/user_stories/recent_entries.png)
-
----
-
-### **1.2 Edit/Lock Time**
-**Goal:**  
-Prevent editing or deletion of time entries once they are billed or included in a posted invoice.
-
+### 1.2 Edit/Lock Time
+**Goal:** Prevent editing/deletion once billed or included in a posted invoice.  
 **Implementation Details:**  
-- Conditional logic disables editing when an entry’s related invoice has `status="posted"`.  
-- The UI hides or disables edit/delete buttons for locked entries.  
-- Attempted edits trigger a warning (“Locked – entry linked to posted invoice”).  
-- Only admins can override this for audit purposes.
+- Editing disabled when linked invoice has `status="posted"`.  
+- UI hides/disables edit/delete buttons when locked.  
+- Attempted edits show “Locked – entry linked to posted invoice”.  
+- Admin override allowed for audit purposes.  
+**Achieved:** Financial data integrity preserved.
 
- **Achieved:** Time entries are correctly locked after billing, preserving financial data integrity.
-
-**Links:**  
-[Locked entry message](/readme_docs/user_stories/locked_entry.png)
-
----
-
-### **2.1 Generate Draft Invoice**
-**Goal:**  
-Enable fee earners to generate draft invoices from unbilled time and expenses.
-
+### 2.1 Generate Draft Invoice
+**Goal:** Generate draft invoices from unbilled time/expenses.  
 **Implementation Details:**  
-- The **Invoice** model aggregates all unbilled **WIP** and **Expense** entries for a given matter or client.  
-- Drafts include calculated subtotals, VAT, and totals via model property methods.  
-- Once generated, items are flagged as **drafted** to prevent reuse.  
-- Drafts remain editable until approved by a partner.
+- `Invoice` aggregates unbilled WIP/Expenses for a matter/client.  
+- Drafts compute subtotals, VAT, totals (model properties).  
+- Source items flagged as **drafted** to prevent reuse.  
+- Drafts remain editable until partner approval.  
+**Achieved:** Unbilled items flow cleanly into drafts.
 
- **Achieved:** Draft invoice generation works seamlessly, pulling unbilled time and expenses together.
-
-**Links:**  
-[Draft invoice view](/readme_docs/user_stories/draft_invoice.png),  
-[Invoice summary](/readme_docs/user_stories/invoice_summary.png)
-
----
-
-### **2.2 Edit Narratives**
-**Goal:**  
-Allow fee earners to refine line-item narratives on draft invoices before posting.
-
+### 2.2 Edit Narratives
+**Goal:** Refine line-item narratives on draft invoices.  
 **Implementation Details:**  
-- Editable narrative fields are exposed at the **invoice line** level.  
-- Updates are stored independently, preserving original time entry data.  
-- Validation limits and formatting checks ensure clarity.  
-- Live updates via AJAX refresh the preview immediately after saving.
+- Editable narrative fields at `InvoiceLine` level.  
+- Updates stored independently of original time entries.  
+- Validation limits and formatting checks.  
+- Live preview refresh via AJAX.  
+**Achieved:** Drafts update without altering source entries.
 
- **Achieved:** Narrative editing updates the invoice draft without altering original time entries.
-
-**Links:**  
-[Narrative edit form](/readme_docs/user_stories/edit_narrative.png),  
-[Preview update](/readme_docs/user_stories/narrative_preview.png)
-
----
-
-### **2.3 Approve & Post Invoice**
-**Goal:**  
-Allow partners to approve and post invoices, finalising billing.
-
+### 2.3 Approve & Post Invoice
+**Goal:** Allow partners to approve and post invoices.  
 **Implementation Details:**  
-- The **“Post”** button is visible only to users with the Partner role.  
-- Posting changes invoice status to `posted` and locks linked WIP/Expense entries.  
-- Posted invoices are read-only and excluded from new drafts.  
-- Totals update dynamically in the reports view.
+- “Post” visible to Partner role only.  
+- Posting sets `status="posted"` and locks linked entries.  
+- Posted invoices are read-only; excluded from new drafts.  
+- Totals update in reports.  
+**Achieved:** Approval/posting with proper access control.
 
- **Achieved:** Approval and posting workflows function correctly with appropriate access control.
-
-**Links:**  
-[Invoice approval view](/readme_docs/user_stories/approve_invoice.png),  
-[Posted invoice summary](/readme_docs/user_stories/posted_invoice.png)
-
----
-
-### **3.1 WIP & Invoice Overview**
-**Goal:**  
-Provide partners with a high-level overview of WIP, draft invoices, and posted invoices.
-
+### 3.1 WIP & Invoice Overview
+**Goal:** High-level overview of WIP, drafts, and posted invoices.  
 **Implementation Details:**  
-- The **WIP dashboard** aggregates totals for:
-  - Unbilled time  
-  - Draft invoices  
-  - Posted invoices  
-- Data grouped by matter shows hours, values, and VAT.  
-- Partners can drill down into categories for details.  
-- No aged-debt tracking (intentionally excluded).  
-- Access restricted to partner-level users.
-
- **Achieved:** Dashboard provides clear and concise billing overviews for partners.
-
-**Links:**  
-[WIP summary view](/readme_docs/user_stories/wip_overview.png),  
-[Invoice totals chart](/readme_docs/user_stories/invoice_overview.png)
+- Dashboard totals for: unbilled time, drafts, posted invoices.  
+- Grouping by matter (hours, values, VAT).  
+- Drill-down into categories.  
+- Aged-debt tracking intentionally excluded.  
+- Access: partner-level only.  
+**Achieved:** Clear billing overview.
 
 ---
 
 ## Technical Summary
-- **Backend:** Django ORM, model forms, and class-based views manage all CRUD operations.  
-- **Validation:** Form-level checks plus business rules embedded in model clean methods.  
-- **Frontend:** Django templates (DTL), Bootstrap for layout, and JavaScript for interactivity.  
-- **Security:** Role-based permissions ensure appropriate visibility and control.  
-- **Data Integrity:** Locked entries and cascading updates ensure consistent invoice totals.   
-
----
-
-## Overall Status
-All user stories from **1.1 through 3.1** have been successfully implemented and verified through functional testing.  
-The application now provides a full workflow — from time and expense recording to invoicing and performance reporting.
+- **Backend:** Django ORM, model forms, class-based views for CRUD.  
+- **Validation:** Form checks + model `clean()` business rules.  
+- **Frontend:** Django templates (DTL), Bootstrap, light JS for interactivity.  
+- **Security:** Role-based permissions align with matrix above.  
+- **Data Integrity:** Locking and cascades keep totals consistent.
 
 ## CRUD Implementation Overview
 
-This project implements full (or intentionally constrained) CRUD for **Time Entries**, **Expenses**, and **Invoices** (drafts editable; posted read-only). Below is a concise breakdown of how each operation is achieved.
-
----
-
 ### TimeEntry (WIP)
 **Model:** `TimeEntry(matter, fee_earner, activity_code, hours_worked, narrative, status, created_at, …)`  
-**Form:** `TimeEntryForm` (validates duration > 0, required narrative, valid activity code; matter must be open)
+**Form:** `TimeEntryForm` (positive durations, narrative required, valid activity codes; matter must be open)
 
 | Operation | How it’s Achieved | Route / View | Template(s) | Notes / Permissions |
 |---|---|---|---|---|
-| **Create** | POST valid form → `form.save()` links to open `Matter` and marks as **unbilled/draft** | `POST /time/new` → `record_time` | `better_bill_project/record.html` | Success/error via Django messages; recent 10 entries shown |
-| **Read** | List recent entries (with `select_related`) and detail view | `GET /time` (list), `GET /time/<id>` (detail) | `record.html` (list), `time_detail.html` | Ordered `-created_at`; quick audit visibility |
-| **Update** | Edit form for unbilled entries only | `POST /time/<id>/edit` | `time_edit.html` | If linked to **posted** invoice → blocked with “Locked” |
-| **Delete** | Delete unbilled entries | `POST /time/<id>/delete` | Confirm partial `time_confirm_delete.html` | Disallowed if entry is drafted into an approved/posted invoice |
-
----
+| Create | POST valid form → save to open `Matter`, mark **unbilled** | `POST /time/new` → `record_time` | `better_bill_project/record.html` | Messages for success/errors; recent 10 entries |
+| Read | List + detail views (efficient with `select_related`) | `GET /time` (list), `GET /time/<id>` | `record.html`, `time_detail.html` | Ordered `-created_at` for audit |
+| Update | Edit only while unbilled | `POST /time/<id>/edit` | `time_edit.html` | Blocked if linked to **posted** invoice |
+| Delete | Delete only while unbilled | `POST /time/<id>/delete` | `time_confirm_delete.html` | Disallowed if drafted/posted |
 
 ### Expense
 **Model:** `Expense(matter, amount, vat_flag, receipt, status, …)`  
-**Form:** `ExpenseForm` (validates amount > 0; file type PDF/JPG/PNG; VAT derived when flagged)
+**Form:** `ExpenseForm` (amount > 0; receipt PDF/JPG/PNG; VAT derived from flag)
 
 | Operation | How it’s Achieved | Route / View | Template(s) | Notes / Permissions |
 |---|---|---|---|---|
-| **Create** | POST valid form; receipt uploaded to storage; VAT computed | `POST /expenses/new` → `expense_create` | `expenses/new.html` | Links to `Matter`; appears in unbilled expenses |
-| **Read** | List and filter by matter; detail view for receipt preview | `GET /expenses` (list), `GET /expenses/<id>` (detail) | `expenses/list.html`, `expenses/detail.html` | Feeds draft invoice generator |
-| **Update** | Edit amount/VAT/receipt while unbilled | `POST /expenses/<id>/edit` | `expenses/edit.html` | Locked once included on **posted** invoice |
-| **Delete** | Delete while unbilled | `POST /expenses/<id>/delete` | `expenses/confirm_delete.html` | Disallowed once linked to **posted** |
-
----
+| Create | POST valid form; file upload; VAT calc | `POST /expenses/new` → `expense_create` | `expenses/new.html` | Links to `Matter`; enters unbilled pool |
+| Read | List/filter by matter; detail with receipt preview | `GET /expenses`, `GET /expenses/<id>` | `expenses/list.html`, `expenses/detail.html` | Feeds invoice drafting |
+| Update | Edit while unbilled | `POST /expenses/<id>/edit` | `expenses/edit.html` | Locked once on **posted** invoice |
+| Delete | Delete while unbilled | `POST /expenses/<id>/delete` | `expenses/confirm_delete.html` | Disallowed once linked to **posted** |
 
 ### Invoice (Draft → Posted)
-**Models:**  
-- `Invoice(client|matter, status, subtotal, tax_rate, tax_amount@property, total@property, …)`  
-- `InvoiceLine(invoice, wip|expense, narrative_override, amount, …)`  
-**Forms/Logic:** Draft creation aggregates **unbilled** time + expenses; lines created with amounts & optional `narrative_override`
+**Models:** `Invoice(...)`, `InvoiceLine(invoice, wip|expense, narrative_override, amount, …)`
 
 | Operation | How it’s Achieved | Route / View | Template(s) | Notes / Permissions |
 |---|---|---|---|---|
-| **Create** | “Create Draft” aggregates unbilled WIP/Expenses → `Invoice` + `InvoiceLine`s | `POST /invoices/draft/create?matter=<id>` | `invoices/draft.html` | Source rows flagged as **drafted** to avoid duplication |
-| **Read** | Draft list/detail; posted list/detail; print/preview | `GET /invoices`, `GET /invoices/<id>` | `invoices/list.html`, `invoices/detail.html` | Totals via model properties; VAT shown |
-| **Delete** | Delete entire draft or remove a line | `POST /invoices/<id>/delete`, `POST /invoices/<id>/lines/<line_id>/delete` | `invoices/confirm_delete.html` | Deleting draft unlocks its WIP/Expenses |
-| **Post** | Partner-only “Post” locks invoice + linked entries | `POST /invoices/<id>/post` | `invoices/detail.html` | Changes `status='posted'`; all linked entries read-only |
+| Create | Aggregate unbilled WIP/Expenses to draft + lines | `POST /invoices/draft/create?matter=<id>` | `invoices/draft.html` | Flags sources as **drafted** |
+| Read | Draft/posted lists + detail; print/preview | `GET /invoices`, `GET /invoices/<id>` | `invoices/list.html`, `invoices/detail.html` | Totals via properties |
+| Delete | Delete draft or remove a line | `POST /invoices/<id>/delete` | `invoices/confirm_delete.html` | Deleting draft unlocks sources |
+| Post | Partner approves; Billing posts | `POST /invoices/<id>/post` | `invoices/detail.html` | Sets `status='posted'`; locks entries |
 
 ---
 
 ## Permissions & Locking Summary
-- **Roles:** Fee Earner (create/edit own unbilled), Partner (approve/post), Admin (override unlocks when required).
+- **Roles:** Fee Earner (create/edit own unbilled), Associate/Partner (oversight), Billing (finalise invoices), Admin (read-only audits).  
 - **Locking Rules:**  
-  - Time/Expense on a **posted** invoice → **no Update/Delete**.  
-  - Draft invoices editable; **posted invoices read-only**.  
-  - Attempted edits on locked records show “Locked – entry linked to posted invoice”.
+  - Time/Expense on a **posted** invoice → no update/delete.  
+  - Draft invoices editable; **posted** invoices read-only.  
+  - Attempted edits on locked records show a clear warning.
 
 ---
 
-## Validation & Integrity
-- **Forms:** Business rules at form level (positive amounts/hours, narrative required, acceptable files).  
-- **Models:** Calculations via properties (`tax_amount`, `total`) to keep totals consistent.  
-- **Views:** Guard rails (e.g., check status before allowing Update/Delete).  
-- **Querysets:** `select_related`/`prefetch_related` for efficient lists (recent time entries, invoice lines).  
-- **Messages/UI:** Success and error messages; conditional buttons (hide edit/delete when locked).
-
----
-
-## Reuse & UX Patterns
-- **Shared partials** for forms and line tables.  
-- **Recent activity** widget (last 10 time entries) for quick feedback.  
-- **AJAX** for narrative edits/preview refresh in drafts.  
-- **Consistent routes** and CSRF-protected POST actions for all mutations.
-
-
+*Generated on:* {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC
