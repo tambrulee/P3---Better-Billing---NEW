@@ -140,49 +140,24 @@ def _is_admin(user, p=None) -> bool:
     # Treat Django superuser as admin
     return bool(getattr(user, "is_superuser", False))
 
+# --- Permission checkers for view invoice tab ----
 
-# --- Replace your can_view_invoices_user with this ---
 def can_view_invoices_user(user) -> bool:
-    """
-    Return True for:
-    - superuser
-    - explicit Django permission
-    - Personnel boolean flags (is_admin / is_billing /
-    is_cashier / is_partner / is_associate_partner)
-    - role name strings that include 'billing' etc. (tolerant)
-    """
+    """Only Admin, Billing, Partner, Associate Partner can see invoices (not fee earners)."""
     if getattr(user, "is_superuser", False):
         return True
-
-    # If you configured model-level perms, keep this check:
-    try:
-        if user.has_perm(PERM_VIEW_INV):
-            return True
-    except Exception:
-        pass
 
     p = _personnel(user)
     if not p:
         return False
 
-    if any([
-        bool(getattr(p, "is_admin", False)),
-        bool(getattr(p, "is_billing", False)),
-        bool(getattr(p, "is_cashier", False)),
-        bool(getattr(p, "is_partner", False)),
-        bool(getattr(p, "is_associate_partner", False)),
-    ]):
+    # Explicit, no cashier references
+    if _is_billing(p) or _is_partner(p) or _is_assoc(p):
         return True
 
-    rn = _role_name(p)
-    if (
-        rn == "billing administrator"
-        or "billing" in rn
-        or rn in {"admin", "partner", "associate partner"}
-    ):
-        return True
-
+    # Everyone else (fee earners etc.) -> no
     return False
+
 
 # ---- Robust flag resolver ----
 BILLING_KEYWORDS = {"billing administrator",}
