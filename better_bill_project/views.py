@@ -25,33 +25,42 @@ from urllib.parse import urlparse # for URL parsing
 from xhtml2pdf import pisa # for PDF generation
 
 def _p(user):
+    """Return Personnel profile for user, or None if not found."""
     return getattr(user, "personnel_profile", None)
 
 def is_cashier(user):
+    """Return True if user is cashier."""
     p = _p(user)
     return bool(p and p.is_cashier)
 
 def is_partner(user):
+    """Return True if user is partner."""
     p = _p(user)
     return bool(p and p.is_partner)
 
 
 def is_assoc(user):
+    """Return True if user is associate partner."""
     p = _p(user)
     return bool(p and p.is_associate_partner)
 
 
 def is_billing(user):
+    """Return True if user is billing administrator."""
     p = _p(user)
     return bool(p and p.is_billing)
 
 
 def is_partner_or_assoc(user):
+    """Return if user is partner or associate"""
     # Partner or Associate Partner only (Admin excluded)
     return is_partner(user) or is_assoc(user)
 
 
 def is_view_invoices(user):
+    """
+    Sets permission for view invoices
+    """
     # Associate Partner, Partner, or Billing (Admin excluded)
     return any((
         is_partner(user),
@@ -72,6 +81,7 @@ def is_time_entry_user(user) -> bool:
 APP_LABEL = Invoice._meta.app_label
 PERM_VIEW_INV = f"{APP_LABEL}.view_invoice"
 PERM_POST_INV = f"{APP_LABEL}.post_invoice"
+PERM_CREATE_INV = f"{Invoice._meta.app_label}.create_invoice"
 
 
 # -- Views --
@@ -82,9 +92,9 @@ PERM_POST_INV = f"{APP_LABEL}.post_invoice"
 WIP_ONLY_ROLES = ("Case administrator", "Trainee associate", "Paralegal")
 
 # Helper to check if user can view invoices
-ROLE_BILLING = {"billing administrator", "billing", "accounts", "finance"}
+ROLE_BILLING = {"billing administrator"}
 ROLE_PARTNER = {"partner"}
-ROLE_ASSOC_PARTNER = {"associate partner", "assoc partner", "associate_partner"}
+ROLE_ASSOC_PARTNER = {"associate partner"}
 
 # ---- Role utilities ----
 def _personnel(user):
@@ -112,7 +122,7 @@ def _is_partner(p) -> bool:
     return _role_name(p) == "partner"
 
 def _is_assoc(p) -> bool:
-    return _role_name(p) in {"associate partner", "assoc partner", "associate_partner"}
+    return _role_name(p) in {"associate partner"}
 
 def _is_admin(user, p=None) -> bool:
     # Treat Django superuser as admin
@@ -525,7 +535,6 @@ def _next_invoice_number():
     return f"{n + 1:06d}"
 
 @login_required
-@permission_required(PERM_POST_INV, raise_exception=True)
 def create_invoice(request):
     """ Create an invoice from selected unbilled WIP items.
     """

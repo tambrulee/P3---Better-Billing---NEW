@@ -36,7 +36,8 @@ DEBUG = False
 ALLOWED_HOSTS = ["betterbilling.herokuapp.com",
                  ".herokuapp.com",
                  "localhost",
-                 "127.0.0.1"]
+                 "127.0.0.1",
+                 ]
 
 LOGGING = {
     "version": 1,

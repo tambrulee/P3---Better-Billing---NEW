@@ -69,7 +69,7 @@ Finally, I validated all templates with **HTML5 Validator**, ensuring clean, acc
 |----------------------|---------------|------------|
 | HTML | HTML 5 Validator | No major errors |
 | CSS | Jigsaw CSS Validator | No issues |
-| Python | PEP8 / Flake8 | [All code compliant]() - [See all errors and fixes here](/readme_docs/testing/ruff_check.png) |
+| Python | PEP8 / Flake8 | [All code compliant](/readme_docs/testing/ruff_check.png) - [See all errors and fixes here](/readme_docs/testing/pep8_test.md) |
 | Database | Django ORM Migrations | Passed with no conflicts |
 | Security | `.env` + `.gitignore` + `DEBUG=False` | Passed |
 
