@@ -142,26 +142,16 @@ The system enables fee earners to record time and expenses, generate invoices, a
 | Update | Edit only while unbilled | `POST /time/<id>/edit` | `time_edit.html` | Blocked if linked to **posted** invoice |
 | Delete | Delete only while unbilled | `POST /time/<id>/delete` | `time_confirm_delete.html` | Disallowed if drafted/posted |
 
-### Expense
-**Model:** `Expense(matter, amount, vat_flag, receipt, status, …)`  
-**Form:** `ExpenseForm` (amount > 0; receipt PDF/JPG/PNG; VAT derived from flag)
+### **Invoice (Draft → Posted → Paid)**
+**Models:** `Invoice(...)`, `InvoiceLine(invoice, wip|expense, narrative_override, amount, …)`, `Ledger(invoice, status, paid_at, …)`
 
 | Operation | How it’s Achieved | Route / View | Template(s) | Notes / Permissions |
 |---|---|---|---|---|
-| Create | POST valid form; file upload; VAT calc | `POST /expenses/new` → `expense_create` | `expenses/new.html` | Links to `Matter`; enters unbilled pool |
-| Read | List/filter by matter; detail with receipt preview | `GET /expenses`, `GET /expenses/<id>` | `expenses/list.html`, `expenses/detail.html` | Feeds invoice drafting |
-| Update | Edit while unbilled | `POST /expenses/<id>/edit` | `expenses/edit.html` | Locked once on **posted** invoice |
-| Delete | Delete while unbilled | `POST /expenses/<id>/delete` | `expenses/confirm_delete.html` | Disallowed once linked to **posted** |
-
-### Invoice (Draft → Posted)
-**Models:** `Invoice(...)`, `InvoiceLine(invoice, wip|expense, narrative_override, amount, …)`
-
-| Operation | How it’s Achieved | Route / View | Template(s) | Notes / Permissions |
-|---|---|---|---|---|
-| Create | Aggregate unbilled WIP/Expenses to draft + lines | `POST /invoices/draft/create?matter=<id>` | `invoices/draft.html` | Flags sources as **drafted** |
-| Read | Draft/posted lists + detail; print/preview | `GET /invoices`, `GET /invoices/<id>` | `invoices/list.html`, `invoices/detail.html` | Totals via properties |
-| Delete | Delete draft or remove a line | `POST /invoices/<id>/delete` | `invoices/confirm_delete.html` | Deleting draft unlocks sources |
-| Post | Partner approves; Billing posts | `POST /invoices/<id>/post` | `invoices/detail.html` | Sets `status='posted'`; locks entries |
+| **Create** | Aggregates unbilled WIP/Expenses into a draft invoice and line items | `POST /invoices/draft/create?matter=<id>` | `invoices/draft.html` | Flags source entries as **drafted** to prevent reuse |
+| **Read** | Displays draft, posted, and paid invoices with print/preview options | `GET /invoices`, `GET /invoices/<id>` | `invoices/list.html`, `invoices/detail.html` | Totals calculated via model properties; paid status reflected from ledger |
+| **Delete** | Deletes an unposted draft or removes a line item | `POST /invoices/<id>/delete` | `invoices/confirm_delete.html` | Deleting a draft **unlocks** associated WIP/Expense items |
+| **Post** | Partner approves and billing user posts invoice | `POST /invoices/<id>/post` | `invoices/detail.html` | Sets `status='posted'`; locks linked WIP/Expense entries from further edits |
+| **Mark as Paid** | Billing user updates the invoice’s linked ledger entry to `status='paid'` and sets `paid_at=timezone.now()` | `POST /invoices/<id>/settle` | `invoices/detail.html` | Only visible to **Billing** role; prevents repeat marking; displays success message (“Invoice successfully marked as paid”) |
 
 ---
 

@@ -1,68 +1,112 @@
-# Welcome to the Better Billing Project
+# 🧾 Better Billing — Overview
 
-## 📑 Project Documentation
+Better Billing is a full-stack time recording and invoicing application built for law firms, where **fee earners** record their time, **partners** review and approve work, and **billing administrators** post final invoices.  
 
-## What is Better Billing?
+The project was developed using **Django**, **PostgreSQL**, and **Bootstrap**, and securely deployed to **Heroku**.  
+Environment variables are managed through `.env` files to protect **secret keys** and **database credentials**.
 
-**Better Billing** is a full-stack Django web application designed to streamline legal billing processes.  
+---
 
-It allows **Fee Earners** to record and manage time entries, raise **draft invoices**, and monitor **work in progress (WIP)**, while **Partners** can post final invoices.  
-The project was developed using **Django**, **PostgreSQL**, and **Bootstrap**, and deployed securely to **Heroku** with environment variables managed via `.env` for secret keys and database credentials.
+## 🎯 Project Goal
 
-The app’s goal was to make time recording and billing more intuitive and transparent for fee earners in a law firm environment. It models real-world relationships between **Clients**, **Matters**, **Time Entries**, **WIP**, and **Invoices**, offering complete CRUD functionality across all core data entities.
+The aim of Better Billing is to make **time recording** and **client billing** intuitive, transparent, and efficient for law firm teams.  
 
-## How Better Billing works 
-Lawyers (fee earners) input their time worked with a description of the work performed submitted against a client, matter and activiy code. The administrator, in this scenario the Partners, can then pick up and review the time entries then push them to an randomly generated invoice number. 
+It accurately models real-world legal processes through linked data entities:  
+**Clients → Matters → Time Entries → WIP (Work in Progress) → Invoices.**  
 
-The user interactions create data that is pushed into the database via the Record Time interface, data is then fed through to WIP and eventually onto the Invoice/Ledger tables. In line with CRUD principles the user can create, read, update and entries based on permissions. 
+Each entity supports full **CRUD** functionality with role-based permissions, ensuring users can only view or modify what’s appropriate to their role.
 
-## Dependencies
-I designed the front end with **Bootstrap** to ensure full responsiveness and consistency across screen sizes. Accessibility guidelines were followed by using semantic HTML, ARIA labels, and high-contrast colour combinations. The UX was intentionally simple and linear, reducing friction when entering time or generating invoices.
+---
 
-For the back end, I built a **Django project** with clearly structured apps, models, and views.  
-I implemented custom HTML templates that respond dynamically to user actions, such as form submissions and validation errors, using Django’s template logic and conditional rendering.  
+## ⚙️ How Better Billing Works
 
-Data is persisted through PostgreSQL, and user interactions—like saving a Time Entry or creating an Invoice—trigger database updates and instant feedback via Django’s **messages framework**.  
-This provides users with immediate confirmation of actions (e.g., “Time entry saved successfully.”).
+1. **Fee Earners** log their time via the “Record Time” interface, adding a short narrative and linking it to a **Client**, **Matter**, and **Activity Code**.  
+2. **Partners** (administrators) review submitted entries and generate draft invoices.  
+3. **Billing users** can then **post** and **mark invoices as paid**, ensuring each stage of the billing cycle is traceable.  
 
-I also followed **PEP8** conventions throughout my Python code, using descriptive variable names, consistent indentation, and comments for readability. HTML and CSS were validated using W3C and Jigsaw validators.
+All user actions feed data into the PostgreSQL database:
+- Time entries flow into **WIP** tables.  
+- WIP items are aggregated into **Invoices**.  
+- Each invoice links to a **Ledger** record that tracks posting and payment status.  
 
-## Set & Up and Installations
+This ensures a clear, auditable trail from recorded time through to payment, in line with legal billing practices.
 
-[Click here to read through installation and deployment steps for Github, Django and Heroku](/readme_docs/deploy_install.md)
+---
 
-## NB:
-This version of the application works well in a small law firm scenario. It can be scaled or linked to APIs and additional features can be added to handle matter maintainance and rates, for example. Currently, the app relies on the business user having applications and/or databases that could handle the matter, personnel, rates, roles databases. 
+## 🧩 Dependencies & Technical Stack
 
-### Design, Development & Implementation
+### **Frontend**
+- **Bootstrap 5** used for layout, responsiveness, and consistent styling.  
+- Accessibility compliance achieved with semantic HTML, ARIA labels, and strong colour contrast.  
+- UX designed for clarity and minimal friction — entering time or generating invoices takes only a few steps.
 
-- #### [User Stories](/readme_docs/user_story.md)
+### **Backend**
+- Built in **Django**, following the Model-View-Template (MVT) pattern.  
+- Models clearly define relationships between clients, matters, and financial records.  
+- Dynamic templates use Django’s conditional logic to provide instant visual feedback on user actions.  
+- Persistent data stored in **PostgreSQL**, with validation and error handling performed at both form and model level.  
 
-- #### [UX](/readme_docs/ux.md)
+The system uses Django’s **messages framework** for real-time feedback (e.g., _“Time entry saved successfully”_), creating a smooth and transparent experience.
 
-- #### [Testing](/readme_docs/testing.md)
+### **Code Quality**
+- Fully **Flake 8 PEP8-compliant** Python.  
+- Consistent variable naming, indentation, and inline documentation.  
+- **HTML5Validator** and **Jigsaw** validators used for HTML and CSS validation.
+- **ES Lint** used for JS validation
 
-### Data Model Management
+---
 
+## 🧰 Setup & Installation
+
+📄 [Click here to view detailed installation and deployment steps for GitHub, Django, and Heroku.](/readme_docs/deploy_install.md)
+
+---
+
+## ⚡ Notes on Scalability
+
+This version of Better Billing is designed for **small law firm environments**.  
+It can be easily scaled to connect with external **APIs** or expanded to include additional modules — for example:
+- Matter and rate management  
+- Role-based time approval  
+- Integration with accounting or case management systems  
+
+Currently, the app assumes access to internal databases for **Matters**, **Personnel**, and **Rates**, which can be extended in future releases.
+
+---
+
+## 🧱 Design, Development & Implementation
+
+- #### [User Stories](/readme_docs/user_story.md)  
+- #### [UX Design](/readme_docs/ux.md)  
+- #### [Testing & QA](/readme_docs/testing.md)
+
+---
+
+## 🗄️ Data Model Management
 - #### [Database Models & Schema](/readme_docs/db_schema.md)
 
-### Queries & Data Manipulation
+---
 
-- #### [CRUD](/readme_docs/crud.md)
+## 🔍 Queries & Data Manipulation
+- #### [CRUD Functionality](/readme_docs/crud.md)
 
-### Deployment
+---
 
-- #### [Heroku](/readme_docs/heroku.md)
+## 🚀 Deployment
+- #### [Heroku Configuration](/readme_docs/heroku.md)
 
-### Security
+---
 
+## 🔐 Security
 - #### [Repository Management](/readme_docs/git.md)
 
-### Issues & Fixes
-- #### [Bugs](/readme_docs/bugs.md)
+---
 
-# Sources
+## 🧯 Issues & Fixes
+- #### [Bugs & Fixes](/readme_docs/bugs.md)
 
-View all reading materials and sources [here](/readme_docs/sources.md)
+---
 
-
+## 📚 Sources
+View all research materials, tutorials, and supporting documentation  
+👉 [here](/readme_docs/sources.md)

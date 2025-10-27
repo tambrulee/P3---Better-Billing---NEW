@@ -1,18 +1,4 @@
-*Better Billing* was [deployed](/readme_docs/heroku/heroku_deploy.png) to **Heroku**, ensuring the production version mirrored the local build.  
-
-Deployment was handled through [Git](/readme_docs/heroku/heroku_git.png) and the [VS Code Source Control](/readme_docs/heroku/heroku_vs.png) panel, connecting directly to the GitHub repository.  
-
-The process included:
-1. Freezing dependencies into `requirements.txt`  
-2. Adding a `Procfile` to specify the Gunicorn web server  
-3. Using **Whitenoise** for static file management  
-4. Configuring the **DATABASE_URL** and secret keys through environment variables  
-5. Setting `DEBUG = False` in production  
-
-The deployment section in my README clearly documents each step and references environment setup, GitHub integration, and Heroku configuration.  
-
-All commented-out code and unused files were removed for a clean final build.
-
+ 
 ## Heroku Deployment Issues & Resolutions
 The below provides a detailed account of the issues encountered during the deployment of the *Better Billing* application to Heroku. The objective of this section is to demonstrate an understanding of common deployment challenges and how each was systematically identified, diagnosed, and resolved. Emphasis was placed on maintaining security, environmental consistency, and adherence to Django deployment best practices.
 
